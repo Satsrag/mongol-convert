@@ -37,7 +37,7 @@ fn birgas_roundtrip_through_zvvnmod_in_both_directions() {
 #[test]
 fn every_source_spells_the_nirugu_the_hub_way() {
     // The hub uses ZVVNMOD's own code for the nirugu, E0E5 — the same one the UTN #57 crate reads
-    // and writes — so all four sources agree on one hub text (Satsrag/meco-rust#29).
+    // and writes — so all four sources agree on one hub text (Satsrag/mongol-convert#29).
     for source in [CodeType::Delehi, CodeType::MenkLetter] {
         assert_eq!(
             translate(source, CodeType::Zvvnmod, "A\u{180A}B").unwrap(),

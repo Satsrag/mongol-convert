@@ -1,323 +1,83 @@
-# meco
+# mongol-convert
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-`meco` converts Mongolian text between ZVVNMOD, Delehi, MenkShape, MenkLetter, and Z52. The conversion core is written in Rust and verified byte-for-byte against the original Java implementation on an 11,492-row test corpus.
+Convert traditional Mongolian text between encodings: Delehi, MenkLetter, UTN #57, MenkShape, Z52, and ZVVNMOD. Written in Rust, available as a CLI, a Rust library, and C, Swift, Android, and WebAssembly packages. Everything runs locally with no external dependencies.
 
-The `meco-core` crate provides both:
+> The project was previously called `meco`. The crate and command are still published as `meco-core` and `meco` for now.
 
-- a Rust library API;
-- the `meco` command for desktop and server use.
+## Try it online
 
-Canonical UTN #57 Unicode output is built in on every platform. The conversion is pure Rust and runs in process, so the CLI, the Rust library, and the Web, mobile, and prebuilt C packages all provide it without an external command, interpreter, or installer.
-
-## Try it in the browser
-
-**<https://www.satsrag.dev/convert/>** — the same Rust core compiled to WebAssembly, running
-entirely in your browser; nothing is uploaded.
-
-Type on the left, pick a target encoding on the right, and the ZVVNMOD hub in the middle shows what
-the conversion actually pivots through — which is usually what tells you which half of a bad
-conversion is at fault. Every code point is listed under its pane, and characters that do not belong
-to the pane's encoding are marked red, so choosing the wrong `--from` is visible rather than silent.
-A report button files an issue in this repository with the sequences already filled in.
-
-The page is built from `crates/meco-wasm/web` with its `build.sh`.
+**<https://www.satsrag.dev/convert/>** — runs entirely in your browser; nothing is uploaded.
 
 ## Supported encodings
 
-| CLI name | Description | Portable source | Portable target |
-|---|---|---:|---:|
-| `zvvnmod` | Internal shape-oriented interchange format used by meco | Yes | Yes |
-| `delehi` | Delehi Unicode letter convention | Yes | Yes |
-| `menk_shape` | Menk positional shape encoding | Yes | Yes |
-| `menk_letter` | Menk letter convention | Yes | Yes |
-| `z52` | Z52/zcode positional encoding | Yes | Yes |
-| `utn57` | Unicode following the reviewed UTN #57 mapping | Yes | Yes |
-| `utn57_shape` | The UTN #57 text spelled as its written units, ᠰᠠᠢᠨ as `SAIIA` | Yes | Yes |
-| `oyun` | Reserved by the original API | No | No |
+| Name | Encoding | Standard |
+|---|---|---|
+| `delehi` | Delehi Unicode | GB/T 25914-2010 |
+| `menk_letter` | Menksoft Unicode | GB/T 25914-2010 |
+| `utn57` | Unicode (UTN #57) | GB/T 25914-2023 |
+| `menk_shape` | Menksoft shape code | — |
+| `z52` | Z52 shape code | — |
+| `zvvnmod` | ZVVNMOD shape code (the internal hub) | — |
+| `utn57_shape` | UTN #57 spelled as written units, e.g. ᠰᠠᠢᠨ → `SAIIA` | — |
 
-MenkLetter and Delehi use many of the same Unicode code points, but they apply different contextual rules. `meco` does not guess the source encoding. Choose `--from` from the application, input method, font system, or database column that produced the text.
+Any encoding can be converted to any other. The source encoding is not detected automatically: Delehi and MenkLetter share code points but follow different rules, so choose `--from` based on where the text came from.
 
-## Install the command
-
-### Requirements
-
-- Rust 1.82 or newer;
-- Cargo on `PATH`.
-
-Install Rust with [rustup](https://rustup.rs/) if `cargo --version` is unavailable.
-
-### Standard CLI
-
-Install the published `meco-core 0.6.0` crate:
+## Command line
 
 ```sh
-cargo install meco-core --version 0.6.0 --locked
+cargo install meco-core --locked
 ```
-
-Check the installation:
 
 ```sh
-meco --version
-meco --help
+meco translate --from z52 --to utn57 'text'
+meco translate --from delehi --to menk_shape < input.txt > output.txt
 ```
 
-Expected version:
+Without a text argument, input is read from stdin. Output has no trailing newline; errors go to stderr with a non-zero exit status.
 
-```text
-meco 0.6.0
-```
-
-### Convert text from an argument
+## Rust library
 
 ```sh
-meco translate --from z52 --to menk_shape 'text'
+cargo add meco-core
 ```
-
-Use the canonical encoding names shown in the table above. The compatibility aliases `menkshape` and `menkletter` are also accepted.
-
-### Read from stdin
-
-Omit the final text argument to read UTF-8 from stdin:
-
-```sh
-printf '%s' 'text' | meco translate --from z52 --to menk_shape
-```
-
-This mode is suitable for files, shell pipelines, and server jobs:
-
-```sh
-meco translate --from z52 --to delehi < input.txt > output.txt
-```
-
-`meco` writes only the converted UTF-8 bytes to stdout. It does not append a newline. Errors go to stderr and return a non-zero exit status.
-
-For interactive use, add a newline after the command:
-
-```sh
-meco translate --from z52 --to delehi 'text'; echo
-```
-
-On zsh, a `%` displayed immediately after the result is the shell's end-of-line marker. It is not part of the converted text.
-
-## Convert to UTN #57
-
-UTN #57 output uses the reviewed ZVVNMOD-to-positioned-written-unit mapping from `zvvnmod-utn57 0.3.2` and the pinned pure-Rust `mongol-norm 0.2.1` normalizer. Both are compiled into `meco`; nothing else has to be installed.
-
-A conversion can succeed and still have gone beyond what the input said: when a hub run begins or ends with a joined-form glyph the hub has no unjoined form of, the encoder can only spell it with an invented ZWJ. `translate_with_warnings` returns the same text together with one warning per such run, naming the run's codes; the `meco` command prints them to stderr as `meco: warning: …` and still exits 0. That is how the missing word-initial `G i O f` ligature (now `E096`, Satsrag/meco-rust#32) showed up, and how the next gap will.
-
-```sh
-meco translate --from z52 --to utn57 'ᡳᡬᡦ ᢌᡭᡪᢊᡱᡱᡭᢐ ᢋᡭᡬᢎᡭᡧ'; echo
-```
-
-All supported legacy sources can target UTN #57:
-
-```sh
-meco translate --from menk_letter --to utn57 '...'
-meco translate --from delehi --to utn57 '...'
-meco translate --from menk_shape --to utn57 '...'
-meco translate --from zvvnmod --to utn57 '...'
-```
-
-UTN #57 also reads back, so it works as `--from` like any other encoding:
-
-```sh
-meco translate --from utn57 --to delehi '...'
-meco translate --from utn57 --to z52 '...'
-```
-
-The reverse is not yet a perfect inverse. Over the 1,508-word corpus in
-`crates/meco-core/tests/golden/corpus_delehi.txt`, 1,020 of the 1,053 words that carry no
-control ZVVNMOD drops on the way out survive `zvvnmod → utn57 → zvvnmod` unchanged; 33 do not,
-mostly by gaining or losing a shape code. `tests/utn57.rs` pins those counts, so the gap cannot
-widen unnoticed. Keep the original text when the round-trip matters.
-
-### UTN #57 troubleshooting
-
-#### `conversion not supported for Utn57`
-
-An older `meco`. Current versions read UTN #57 as well as write it, and neither direction needs the `utn57-command` feature or an external backend. Upgrade.
-
-#### `UTN #57 conversion failed: ...`
-
-The in-process backend rejected the text — the ZVVNMOD hub going out, or the UTN #57 input coming back. Check that `--from` names the encoding the text was actually produced in, and report the input together with the message if the source is correct.
-
-#### The output contains FVS, MVS, or ZWJ
-
-That is expected. UTN #57 serialization uses standard Unicode Mongolian letters and format controls to request specific written forms. Inspect code points rather than relying on one font's rendering.
-
-#### MenkLetter and Delehi produce different results
-
-They are different source conventions even though both use Unicode Mongolian letters. Check where the source text came from. Do not switch the `--from` value based only on how the text looks.
-
-### The written-unit spelling: `utn57_shape`
-
-`utn57_shape` is the `utn57` text seen through mongol-norm's shape function: every Mongolian word
-is spelled as the PascalCase names of its written units, structural units included — ᠰᠠᠢᠨ is
-`SAIIA`, ᠮᠣᠩᠭᠣᠯ᠎ᠤᠨ is `MOAGNNOLMvsOA`. Everything that is not a word passes through, as in every
-other encoding. It reads as well as it writes: `SAIIA` (or the `+`-joined `S+A+I+I+A` that the
-`mongol-norm shape` command prints) is normalized to the canonical UTN #57 spelling and continues
-as `utn57` would, so it reaches every target exactly as that spelling does. A word that begins
-with an uppercase letter but is not a spelling — an unknown unit, an ambiguous compact string, a
-shape the normalize table does not cover — is an error naming the reason, not passthrough.
-
-```bash
-meco translate --from delehi --to utn57_shape 'ᠰᠠᠢᠨ'     # SAIIA
-meco translate --from utn57_shape --to utn57 'SAIIA'      # ᠰᠠᠢ᠍ᠢ᠍ᠠ᠌
-```
-
-## Use the Rust library
-
-Add the default, pure Rust library:
-
-```sh
-cargo add meco-core@0.6.0
-```
-
-Or add it to `Cargo.toml`:
-
-```toml
-[dependencies]
-meco-core = "0.6.0"
-```
-
-Convert text:
 
 ```rust
 use meco_core::{translate, CodeType};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let input = "text";
-    let output = translate(CodeType::Z52, CodeType::MenkShape, input)?;
-    print!("{output}");
-    Ok(())
-}
+let output = translate(CodeType::MenkLetter, CodeType::Utn57, "text")?;
 ```
 
-The library has no external runtime or command dependency and builds for `wasm32-unknown-unknown`.
+## Other platforms
 
-### UTN #57 output from the Rust library
+Download from [GitHub Releases](https://github.com/Satsrag/mongol-convert/releases/latest):
 
-```rust
-use meco_core::{translate, CodeType};
-
-let output = translate(CodeType::MenkLetter, CodeType::Utn57, input)?;
-```
-
-No Cargo feature is required. The `utn57-command` feature name is still accepted as a deprecated no-op so existing build commands keep working.
-
-## Prebuilt release packages
-
-Download packages from the [v0.6.0 release](https://github.com/Satsrag/meco-rust/releases/tag/v0.6.0).
-
-| Platform | Release asset |
+| Platform | Asset |
 |---|---|
-| Linux x86_64 C ABI | `meco-c-linux-x86_64.zip` |
-| Linux AArch64 C ABI | `meco-c-linux-aarch64.zip` |
-| macOS Apple Silicon C ABI | `meco-c-macos-arm64.zip` |
-| macOS Intel C ABI | `meco-c-macos-x86_64.zip` |
-| Windows x86_64 C ABI | `meco-c-windows-x86_64.zip` |
-| iOS Swift | `MecoSwift.xcframework.zip` |
-| Apple C ABI | `MecoC.xcframework.zip` |
+| C ABI (Linux / macOS / Windows) | `meco-c-<platform>.zip` |
+| iOS / macOS | `MecoSwift.xcframework.zip`, `MecoC.xcframework.zip` |
 | Android | `meco-android-release.aar` |
-| Browser/WebAssembly | `meco-wasm-web-0.6.0.tgz` |
-| Node.js/WebAssembly | `meco-wasm-nodejs-0.6.0.tgz` |
-| Mongolian conversion agent skill | `mongolian-convert-0.6.0.zip` |
+| Browser / Node.js | `meco-wasm-web-<version>.tgz`, `meco-wasm-nodejs-<version>.tgz` |
+| Agent skill | `mongolian-convert-<version>.zip` |
 
-The C archives include the header and static/dynamic libraries for the target. Go, Python, PHP, Java, Dart, and other runtimes can load the C ABI. Swift, Android, browser, and Node.js have dedicated packages.
+Go, Python, PHP, Java, Dart, and others can load the C ABI. See [USAGE.md](USAGE.md) for per-language examples and [skills/mongolian-convert](skills/mongolian-convert/README.md) for the skill.
 
-See [USAGE.md](USAGE.md) for C, C++, Go, Python, Dart, Java, Android, Swift, Objective-C, browser, Node.js, and PHP examples.
+## Notes
 
-Every prebuilt package includes UTN #57 output alongside the portable conversions among ZVVNMOD, Delehi, MenkShape, MenkLetter, and Z52.
+- Keep the original text and its encoding when migrating data. Conversion may merge different spellings, so a round trip is not guaranteed to be identical.
+- Conversions between the legacy encodings are verified byte-for-byte against the original Java implementation.
 
-### Mongolian conversion skill
-
-Download [mongolian-convert-0.6.0.zip](https://github.com/Satsrag/meco-rust/releases/download/v0.6.0/mongolian-convert-0.6.0.zip)
-and extract the `mongolian-convert/` folder into your agent's skills directory.
-The agent transliterates Cyrillic Mongolian into a MenkLetter draft, then runs the
-bundled meco converter to repair suffix separators and produce UTN57 or another
-requested encoding. Running the skill requires Node.js 18.20 or newer.
-See the [skill source and installation guide](skills/mongolian-convert/README.md).
-
-## Conversion model
-
-Portable conversions use ZVVNMOD as the hub:
-
-```text
-source encoding
-→ source-specific letter or shape decoder
-→ ZVVNMOD
-→ target-specific letter or shape encoder
-→ target text
-```
-
-UTN #57 output adds two reviewed stages, both linked into the same binary:
-
-```text
-source encoding
-→ meco-core
-→ ZVVNMOD positioned shapes
-→ zvvnmod-utn57 0.3.2 positioned written units
-→ mongol-norm 0.2.1 (pure Rust, in process)
-→ Unicode letters and format controls
-```
-
-MenkLetter and Delehi are letter-level source conventions. MenkShape and Z52 are shape-oriented sources. A shape-oriented source does not always retain enough information to recover one unique phonetic spelling. UTN #57 output from those sources is a reviewed, shape-preserving Unicode serialization, not a dictionary or spelling reconstruction.
-
-## Data safety and round trips
-
-Keep the original text when migrating a corpus. Conversions can normalize FVS/MVS sequences, collapse several legacy spellings into one target spelling, or lose source-specific boundary information. UTN #57 converts both ways, but the round trip is not yet lossless — see the counts above.
-
-A practical storage model is:
-
-```text
-raw_source      original text and its declared encoding
-normalized      converted Unicode/UTN #57 derivative
-search_text     transliteration or another search-oriented representation
-```
-
-Do not detect MenkLetter versus Delehi from code point ranges alone. Store the source encoding with the text.
-
-## Build and test
-
-Clone the repository and run:
+## Development
 
 ```sh
-git clone https://github.com/Satsrag/meco-rust.git
-cd meco-rust
+git clone https://github.com/Satsrag/mongol-convert.git
+cd mongol-convert
 cargo test --workspace --locked
 ```
 
-Build the CLI:
-
-```sh
-cargo build -p meco-core --bin meco --release --locked
-```
-
-The portable conversion matrix is checked against the original Java meco implementation on 11,492 golden rows.
-
-## Repository layout
-
-```text
-crates/meco-core      Rust library and meco CLI
-crates/meco-cabi      C ABI
-crates/meco-uniffi    Swift/Kotlin bindings
-crates/meco-wasm      browser and Node.js WebAssembly
-bindings/             platform packaging
-skills/               agent skill source (bundled converters are built for releases)
-.github/workflows/    CI and release automation
-```
-
-## Documentation
-
-- [中文 README](README.zh-CN.md)
-- [Platform examples](USAGE.md)
-- [Distribution and release process](DISTRIBUTION.md)
-- [`meco-core` on crates.io](https://crates.io/crates/meco-core)
-- [`meco-core` API documentation](https://docs.rs/meco-core)
-- [GitHub releases](https://github.com/Satsrag/meco-rust/releases)
+See [DISTRIBUTION.md](DISTRIBUTION.md) for the release process.
 
 ## License
 
-Apache-2.0. This project is a Rust port of the Java [east-mod/meco](https://github.com/east-mod/meco) implementation.
+Apache-2.0. A Rust port of [east-mod/meco](https://github.com/east-mod/meco).

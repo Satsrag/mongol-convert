@@ -6,8 +6,8 @@ license.workspace = true
 rust-version = "1.82"
 description = "Mongolian Encoding Converter — pure-by-default Rust library and CLI, ported from Java meco."
 readme = "README.md"
-repository = "https://github.com/Satsrag/meco-rust"
-homepage = "https://github.com/Satsrag/meco-rust"
+repository = "https://github.com/Satsrag/mongol-convert"
+homepage = "https://github.com/Satsrag/mongol-convert"
 documentation = "https://docs.rs/meco-core"
 
 [lib]

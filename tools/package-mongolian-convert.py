@@ -92,7 +92,7 @@ def main():
 
     manifest = {
         "meco_version": version,
-        "source": f"https://github.com/Satsrag/meco-rust/tree/{commit}",
+        "source": f"https://github.com/Satsrag/mongol-convert/tree/{commit}",
         "source_commit": commit,
         "files_sha256": {
             name.removeprefix("assets/meco/"): hashlib.sha256(content).hexdigest()

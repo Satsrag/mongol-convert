@@ -30,7 +30,7 @@ pub enum Warning {
     /// the start, a medial or initial at the end — can only be joined to nothing by inventing a
     /// joiner. When the source meant a whole word, that is a gap in the hub's inventory: the glyph
     /// the source needed in that position does not exist there, the way `G i O f` did not until
-    /// `E096` (Satsrag/meco-rust#32). The reason is the encoder's own message and names the run's
+    /// `E096` (Satsrag/mongol-convert#32). The reason is the encoder's own message and names the run's
     /// codes, so the missing glyph can be read off it.
     Utn57(String),
     /// An opt-in heuristic replaced a space before a recognised suffix with NNBSP.
@@ -165,7 +165,7 @@ fn translate_inner(
 /// dumped from Java, which knew the nirugu only as Unicode's `U+180A` — MenkShape maps that to
 /// `E23E`, the Unicode encodings keep it as it is — so each side is handed the spelling it knows,
 /// the way the suffix boundary already is below. Left untranslated, `E0E5` reached MenkShape
-/// output and rendered as a missing glyph (Satsrag/meco-rust#29).
+/// output and rendered as a missing glyph (Satsrag/mongol-convert#29).
 const HUB_NIRUGU: &str = "\u{E0E5}";
 
 /// The nirugu as the legacy tables and the Unicode encodings spell it.
@@ -177,7 +177,7 @@ const UNICODE_NIRUGU: &str = "\u{180A}";
 /// and a medial ligature with a final O; G has only the medial `G m O f`, `E09C`, so Menksoft —
 /// and the Java tables dumped from it — wrote that at the start of a word too. The hub is
 /// positional and the UTN #57 encoder reads it that way: a medial glyph with nothing to its left
-/// can only be spelled with an invented ZWJ (Satsrag/meco-rust#32). So the hub promotes a
+/// can only be spelled with an invented ZWJ (Satsrag/mongol-convert#32). So the hub promotes a
 /// word-initial `E09C` to `E096`, which `zvvnmod-utn57` knows as `G_O_ISOL`, and demotes it again
 /// for the legacy tables, whose ink for `E09C` is exactly the initial ligature's.
 const HUB_G_O_ISOL: char = '\u{E096}';

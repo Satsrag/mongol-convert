@@ -175,4 +175,4 @@ source encoding
 ```
 
 For bindings, distribution, and the Java-oracle verification details, see the
-[meco-rust repository](https://github.com/Satsrag/meco-rust).
+[mongol-convert repository](https://github.com/Satsrag/mongol-convert).

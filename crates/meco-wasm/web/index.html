@@ -195,7 +195,7 @@
         </div>
     </div>
 
-    <footer><a href="../">← other tools / 其他工具</a> · <a href="https://github.com/Satsrag/meco-rust">Satsrag/meco-rust</a>
+    <footer><a href="../">← other tools / 其他工具</a> · <a href="https://github.com/Satsrag/mongol-convert">Satsrag/mongol-convert</a>
         · <a href="#" id="forget" title="clear the encodings and text this browser remembers / 清空本浏览器记住的编码选择和文本">forget local memory / 清除本地记忆</a></footer>
 
 
@@ -653,7 +653,7 @@ function recompute(src){
 // --- reporting -----------------------------------------------------------
 // Nothing is ever sent from this page. The report button assembles the state into a prefilled
 // GitHub issue URL, shows it in full, and only opens it when you say so; you submit it yourself.
-const ISSUE_NEW = "https://github.com/Satsrag/meco-rust/issues/new";
+const ISSUE_NEW = "https://github.com/Satsrag/mongol-convert/issues/new";
 const clip = (t,n)=> t.length > n ? t.slice(0,n) + ` … (截断，共 ${t.length} 字符)` : t;
 
 // Each pane contributes both forms: the raw text, which can be pasted straight back into the
@@ -729,7 +729,7 @@ function issueUrl(d, what){
 // the clipboard and open Copilot for pasting. It honours the repo's issue form when it drafts.
 const COPILOT = "https://github.com/copilot";
 const aiPrompt = (d, what) => [
-    "在 Satsrag/meco-rust 仓库建一个 issue，用 converter-bug.yml 表单。",
+    "在 Satsrag/mongol-convert 仓库建一个 issue，用 converter-bug.yml 表单。",
     "这是蒙古文编码转换器的问题。下面是页面采集的诊断数据，请据此写标题和描述；",
     "**码点序列原样保留，一个字符都不要改写或省略**。",
     what ? `\n用户的说明：${what}` : "",

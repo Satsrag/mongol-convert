@@ -21,7 +21,7 @@ Delehi→MenkLetter, MenkLetter→Z52. Kotlin is generated; run it on a JVM/Andr
 ## Generate the bindings
 
 ```sh
-cd meco-rust
+cd mongol-convert
 cargo build -p meco-uniffi
 LIB=target/debug/libmeco_uniffi.dylib   # or .so on Linux
 cargo run -p meco-uniffi --bin uniffi-bindgen -- generate --library "$LIB" --language swift  --out-dir crates/meco-uniffi/bindings/swift

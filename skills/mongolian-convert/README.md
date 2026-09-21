@@ -7,7 +7,7 @@ separators and produces the requested encoding. The default is UTN57.
 ## Install
 
 Download `mongolian-convert-<version>.zip` from the
-[meco releases](https://github.com/Satsrag/meco-rust/releases). Extract the
+[meco releases](https://github.com/Satsrag/mongol-convert/releases). Extract the
 `mongolian-convert/` folder into your agent's skills directory, or use its skill ZIP
 import if supported. Keep the whole folder, including `assets/` and `scripts/`.
 
@@ -34,5 +34,5 @@ need a compatible font to display correctly.
 The source lives in `skills/mongolian-convert/` in the meco repository. Generated WASM,
 JavaScript bindings, dependency licenses, and the provenance manifest are added during
 packaging; GitHub's automatic source archives do not contain the ready-to-run bundle.
-See [DISTRIBUTION.md](https://github.com/Satsrag/meco-rust/blob/main/DISTRIBUTION.md#agent-skill)
+See [DISTRIBUTION.md](https://github.com/Satsrag/mongol-convert/blob/main/DISTRIBUTION.md#agent-skill)
 for build commands.

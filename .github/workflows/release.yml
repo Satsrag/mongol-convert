@@ -3,7 +3,7 @@
 # crates.io publication uses Trusted Publishing (GitHub OIDC) from the protected `crates-io`
 # environment; no long-lived registry token is stored in GitHub.
 #
-# Assumes meco-rust is its own repository (root = this directory).
+# Assumes mongol-convert is its own repository (root = this directory).
 name: release
 
 on:
@@ -16,7 +16,7 @@ permissions:
 jobs:
   publish-crates:
     needs: [c-libs, wasm, apple, android]
-    if: github.repository == 'Satsrag/meco-rust'
+    if: github.repository == 'Satsrag/mongol-convert'
     runs-on: ubuntu-latest
     environment: crates-io
     permissions:
@@ -51,7 +51,7 @@ jobs:
           cargo package -p meco-core --locked
           local_checksum=$(sha256sum "$archive" | cut -d' ' -f1)
           status=$(curl --fail-with-body --retry 3 --retry-connrefused \
-            --user-agent 'meco-rust-release-workflow' --output /tmp/crates-version.json \
+            --user-agent 'mongol-convert-release-workflow' --output /tmp/crates-version.json \
             --write-out '%{http_code}' \
             "https://crates.io/api/v1/crates/meco-core/$version" || true)
           case "$status" in
@@ -96,7 +96,7 @@ jobs:
           local_checksum=$(sha256sum "$archive" | cut -d' ' -f1)
           for attempt in {1..18}; do
             status=$(curl --retry 3 --retry-connrefused \
-              --user-agent 'meco-rust-release-workflow' --output /tmp/crates-version.json \
+              --user-agent 'mongol-convert-release-workflow' --output /tmp/crates-version.json \
               --write-out '%{http_code}' \
               "https://crates.io/api/v1/crates/meco-core/$version" || true)
             case "$status" in
@@ -311,7 +311,7 @@ jobs:
   # failing a release that is otherwise complete.
   deploy-page:
     needs: [release]
-    if: github.repository == 'Satsrag/meco-rust'
+    if: github.repository == 'Satsrag/mongol-convert'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -363,5 +363,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add convert
           git commit -m "deploy(convert): meco ${GITHUB_REF_NAME#v}" \
-            -m "Built from Satsrag/meco-rust crates/meco-wasm/web at ${GITHUB_REF_NAME}."
+            -m "Built from Satsrag/mongol-convert crates/meco-wasm/web at ${GITHUB_REF_NAME}."
           git push

@@ -2,7 +2,7 @@
 
 One Rust core (`meco-core`), one thin binding per ecosystem, and one release pipeline
 (`.github/workflows/release.yml`) that builds every native artifact from a single version tag.
-**Recommendation:** publish `meco-rust/` as its own Git repository (so the workflow, `Package.swift`,
+**Recommendation:** publish `mongol-convert/` as its own Git repository (so the workflow, `Package.swift`,
 and the per-language packages sit at the repo root, like `meco_php`/`meco_dart` are separate repos).
 
 ## How a consumer adds it (the goal: one line)
@@ -41,7 +41,7 @@ The workflow resolves the current remote tag again immediately before publicatio
 creating the GitHub Release, so a moved tag fails closed.
 
 The repository owner must configure Trusted Publishing under the `meco-core` crate's crates.io
-settings with GitHub owner `Satsrag`, repository `meco-rust`, workflow filename `release.yml`, and
+settings with GitHub owner `Satsrag`, repository `mongol-convert`, workflow filename `release.yml`, and
 environment `crates-io`. The publish job grants only `id-token: write`; the SHA-pinned crates.io auth
 action exchanges GitHub's OIDC identity for a 30-minute publishing token and exposes it only to the
 `cargo publish` step. No long-lived `CARGO_REGISTRY_TOKEN` secret is stored in GitHub.
