@@ -1,0 +1,29 @@
+[package]
+name = "mongol-convert"
+version = "0.7.0"
+edition.workspace = true
+license.workspace = true
+rust-version = "1.82"
+description = "Mongolian Encoding Converter — pure-by-default Rust library and CLI, ported from Java meco."
+readme = "README.md"
+repository = "https://github.com/Satsrag/mongol-convert"
+homepage = "https://github.com/Satsrag/mongol-convert"
+documentation = "https://docs.rs/mongol-convert"
+
+[lib]
+name = "mongol_convert"
+
+[[bin]]
+name = "mongol-convert"
+path = "src/bin/mongol-convert.rs"
+
+[features]
+default = []
+# Deprecated no-op kept so existing `--features utn57-command` builds keep working. UTN #57
+# conversion is always available in both directions: the backend is pure Rust and linked into the
+# core.
+utn57-command = []
+
+[dependencies]
+# Pure-Rust ZVVNMOD ↔ UTN #57 conversion (no subprocess, no Python, wasm32 compatible).
+zvvnmod-utn57 = "=0.3.2"

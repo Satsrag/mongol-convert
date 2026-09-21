@@ -81,16 +81,16 @@ body:
       render: text
 
   - type: textarea
-    id: meco-error
+    id: mongol-convert-error
     attributes:
-      label: Error from meco / meco 报的错
+      label: Error from mongol-convert / mongol-convert 报的错
       description: Paste it verbatim if there was one; leave empty otherwise. / 有的话贴原文；没报错就留空。
       render: text
 
   - type: textarea
-    id: meco-warning
+    id: mongol-convert-warning
     attributes:
-      label: Warning from meco / meco 警告
+      label: Warning from mongol-convert / mongol-convert 警告
       description: The converter fills this in when the conversion succeeded but had to invent a ZWJ; leave empty otherwise. / 转换成功但插入了 ZWJ 时转换器会自动填上；没有就留空。
       render: text
 
@@ -109,10 +109,10 @@ body:
     id: environment
     attributes:
       label: Environment / 环境
-      description: meco-core version, browser or CLI, whether the fonts loaded. / meco-core 版本、浏览器或 CLI、字体加载情况。
+      description: mongol-convert version, browser or CLI, whether the fonts loaded. / mongol-convert 版本、浏览器或 CLI、字体加载情况。
       render: text
       placeholder: |
-        core: 0.6.0 (wasm)
+        core: 0.7.0 (wasm)
         page: https://www.satsrag.dev/convert/
         fonts: delehi=loaded zvvn mod=loaded utn57=loaded
         ua: Mozilla/5.0 …

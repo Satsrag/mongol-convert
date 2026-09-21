@@ -274,37 +274,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
-name = "meco-cabi"
-version = "0.6.1"
-dependencies = [
- "meco-core",
-]
-
-[[package]]
-name = "meco-core"
-version = "0.6.1"
-dependencies = [
- "zvvnmod-utn57",
-]
-
-[[package]]
-name = "meco-uniffi"
-version = "0.6.1"
-dependencies = [
- "meco-core",
- "thiserror",
- "uniffi",
-]
-
-[[package]]
-name = "meco-wasm"
-version = "0.6.1"
-dependencies = [
- "meco-core",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "memchr"
 version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,6 +284,37 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
+name = "mongol-convert"
+version = "0.7.0"
+dependencies = [
+ "zvvnmod-utn57",
+]
+
+[[package]]
+name = "mongol-convert-cabi"
+version = "0.7.0"
+dependencies = [
+ "mongol-convert",
+]
+
+[[package]]
+name = "mongol-convert-uniffi"
+version = "0.7.0"
+dependencies = [
+ "mongol-convert",
+ "thiserror",
+ "uniffi",
+]
+
+[[package]]
+name = "mongol-convert-wasm"
+version = "0.7.0"
+dependencies = [
+ "mongol-convert",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "mongol-norm"

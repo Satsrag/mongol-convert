@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mongolian encoding converter / 蒙古语编码转换</title>
+<style>
+    /* per-encoding fonts (copied from meco static/fonts; utn57 = Noto Sans Mongolian 3.002) */
+    @font-face { font-family:"delehi";      src:url("fonts/delehi.ttf")       format("truetype"); }
+    @font-face { font-family:"menk letter"; src:url("fonts/menk_letter.ttf")  format("truetype"); }
+    @font-face { font-family:"menk shape";  src:url("fonts/menk_shape.ttf")   format("truetype"); }
+    @font-face { font-family:"zvvn mod";    src:url("fonts/ZvvnMod.ttf")      format("truetype"); }
+    @font-face { font-family:"z52";         src:url("fonts/z52.otf")          format("opentype"); }
+    @font-face { font-family:"utn57";        src:url("fonts/utn57.ttf")        format("truetype"); }
+
+    :root { --bd:#dcd8cd; --mut:#8a8577; --acc:#2d7d6f; --hub:#b8860b; --bg:#faf9f6; }
+    * { box-sizing:border-box; }
+    /* The whole page is one column that fills the viewport; the panes take whatever the header,
+       intro and footer leave, and inside each pane the box gets the lion's share of it. */
+    html { height:100%; }
+    body { height:100%; margin:0; display:flex; flex-direction:column;
+           background:var(--bg); color:#222; padding:16px 20px;
+           font-family:system-ui,-apple-system,"PingFang SC",sans-serif; }
+    h1, footer { flex:0 0 auto; }
+    h1 { font-size:17px; margin:0 0 10px; }
+    .zh { display:block; margin-top:3px; }
+    .h1zh { font-weight:400; color:var(--mut); }
+    #status { margin-left:10px; font-size:12px; font-weight:400; color:var(--mut); }
+
+    /* One grid for all three panes, so the caption / box / code-point rows line up across them no
+       matter how much each row's content needs. `.pane` is display:contents, which keeps its
+       classes available to the descendant selectors below while letting its children be grid items. */
+    .panes { flex:1 1 auto; min-height:0; display:grid;
+             grid-template-columns: minmax(240px,1fr) auto minmax(240px,1fr) auto minmax(240px,1fr);
+             grid-template-rows: auto minmax(0,1fr) fit-content(30%);
+             row-gap:6px; column-gap:14px; align-items:stretch; }
+    .pane { display:contents; }
+    #paneL > * { grid-column:1; }
+    #paneM > * { grid-column:3; }
+    #paneR > * { grid-column:5; }
+    .pane .cap { grid-row:1; }
+    .pane .mongwrap { grid-row:2; }
+    .pane .hex { grid-row:3; }
+    #arrow1 { grid-column:2; }
+    #arrow2 { grid-column:4; }
+    .pane .cap { display:flex; justify-content:space-between; align-items:center; gap:8px;
+                 font-size:13px; color:var(--mut); }
+    .pane .cap select { min-width:0; max-width:100%; font-size:13px; padding:4px 8px;
+                        border:1px solid var(--bd); border-radius:6px; background:#fff; }
+    .pane.hub .cap { color:var(--hub); font-weight:700; }
+    .cap .capbtns { display:flex; gap:4px; margin-left:auto; }
+    .cap button { font:inherit; font-size:11px; padding:2px 7px; cursor:pointer; white-space:nowrap;
+                  color:#444; border:1px solid var(--bd); border-radius:6px; background:#fff; }
+    .cap button:hover { border-color:var(--acc); color:var(--acc); }
+    /* A textarea cannot colour individual characters, so each box is a transparent textarea over a
+       backdrop that paints the same text with the same metrics. Both inherit the pane's font. */
+    .mongwrap { min-height:0; position:relative; overflow:hidden;
+                border:1px solid var(--bd); border-radius:9px; background:#fff; }
+    .pane.hub .mongwrap { border-color:var(--hub); background:#fffdf5; }
+    .pane.ro .mongwrap { background:#f6f5f1; }
+    .mong { writing-mode:vertical-lr; text-orientation:sideways; height:100%; width:100%;
+            margin:0; padding:12px; border:0; background:transparent;
+            font-family:inherit; font-size:30px; line-height:1.5; white-space:pre-wrap; }
+    textarea.mong { position:relative; z-index:1; display:block; overflow:auto; resize:none;
+                    color:transparent; caret-color:#222; }
+    .bd { position:absolute; inset:0; z-index:0; color:#222; overflow:hidden; pointer-events:none; }
+    .bd .bad { color:#c0392b; }
+    /* the mirror of `.cu.sel`: the characters a code-point selection covers, lit in the box above */
+    .bd .hl { background:rgb(45 125 111 / .3); border-radius:3px; box-shadow:0 0 0 1px rgb(45 125 111 / .3); }
+    .bd .hl.bad { background:rgb(192 57 43 / .22); box-shadow:0 0 0 1px rgb(192 57 43 / .3); }
+    /* an echo is the same mark in a pane you did not select in: whole words, so toned down */
+    .bd .hl.echo { background:rgb(45 125 111 / .13); box-shadow:0 0 0 1px rgb(45 125 111 / .2); }
+    .bd .hl.echo.bad { background:rgb(192 57 43 / .1); box-shadow:0 0 0 1px rgb(192 57 43 / .2); }
+    textarea.mong::placeholder { color:#b6b1a5; }
+    .ro-badge { font-size:11px; color:var(--acc); border:1px solid var(--acc); border-radius:5px; padding:0 4px; }
+    .arrow { grid-row:1 / -1; align-self:center; color:var(--mut); font-size:22px; }
+    .hex { min-height:30px; overflow:auto;
+           font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; line-height:1.6;
+           color:#555; background:#f3f1ea; border:1px solid var(--bd); border-radius:8px;
+           padding:6px 8px; white-space:pre-wrap; word-break:break-all; }
+    .tag { color:var(--acc); font-weight:700; }
+    .cu { padding:1px 2px; border-radius:3px; cursor:pointer; }
+    .cu:hover { background:#e6e2d6; }
+    .cu.sel { background:var(--acc); color:#fff; }
+    .cu.sel .tag { color:#b7e4d6; }
+    .cu.bad { color:#c0392b; }
+    .cu.sel.bad { background:#c0392b; color:#fff; }
+    .cu.sel.bad .tag { color:#f6d0cb; }
+    .cu.sel.echo { background:#cfe7df; color:#12463a; }
+    .cu.sel.echo .tag { color:var(--acc); }
+    .cu.sel.echo.bad { background:#f3d3cd; color:#c0392b; }
+    .cu.sel.echo.bad .tag { color:#c0392b; }
+    .err { color:#c0392b; }
+    /* Always-on bar in the page column, never floating, so it cannot cover the code-point rows.
+       Calm but visible while things work; solid red the moment a conversion actually fails. */
+    #alert { flex:0 0 auto; display:flex; gap:10px; align-items:center; margin-bottom:8px;
+             font-size:13px; line-height:1.45; color:#12463a; background:#e4f3ec;
+             border:1px solid var(--acc); border-radius:9px; padding:8px 12px; }
+    #alert span { flex:1 1 auto; min-width:0; word-break:break-word; }
+    #alert button { flex:0 0 auto; font:inherit; font-size:12px; font-weight:600; padding:4px 11px;
+                    cursor:pointer; color:#fff; background:var(--acc); border:1px solid var(--acc);
+                    border-radius:6px; }
+    #alert button:hover { filter:brightness(1.12); }
+    #alert button[hidden] { display:none; }
+    #alert.bad { color:#fff; background:#c0392b; border-color:#9c2d20;
+                 box-shadow:0 2px 12px rgb(160 45 30 / .28); }
+    #alert.bad::before { content:"⚠"; flex:0 0 auto; font-size:17px; line-height:1; }
+    #alert.bad button { color:#c0392b; background:#fff; border-color:#fff; }
+    #alert.bad button:hover { filter:none; background:#ffe6e2; }
+    @keyframes alertIn { from { opacity:.4; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+    #alert.bad { animation:alertIn .18s ease-out; }
+    /* Amber: the conversion succeeded, but had to go beyond what the input said (an invented ZWJ,
+       which means the hub lacks a glyph for that position). Worth reporting, not a failure. */
+    #alert.warn { color:#5c3d00; background:#fff3d6; border-color:#d9a400; }
+    #alert.warn::before { content:"⚠"; flex:0 0 auto; font-size:17px; line-height:1; }
+    #alert.warn button { color:#5c3d00; background:#fff; border-color:#d9a400; }
+    #alert.warn button:hover { filter:none; background:#ffe9b8; }
+    @media (prefers-reduced-motion: reduce) { #alert.bad { animation:none; } }
+    #report { width:min(760px,92vw); border:1px solid var(--bd); border-radius:12px; padding:0;
+              color:#222; background:var(--bg); }
+    #report::backdrop { background:rgb(20 18 12 / .38); }
+    /* The dialog gets out of its own way while a frame is captured — the point of the shot is the
+       panes underneath it. Hidden by visibility, not display, so nothing reflows. */
+    #report.capturing { visibility:hidden; }
+    #report.capturing::backdrop { background:transparent; }
+    #report .rp { padding:16px 18px; }
+    #report h2 { margin:0 0 6px; font-size:15px; }
+    #report p { margin:0 0 12px; font-size:12px; line-height:1.6; color:var(--mut); }
+    #report label { display:block; font-size:12px; color:var(--mut); margin-bottom:4px; }
+    #reportWhat { width:100%; font:inherit; font-size:13px; padding:6px 8px; margin-bottom:12px;
+                  border:1px solid var(--bd); border-radius:6px; background:#fff; resize:vertical; }
+    .shot { margin-bottom:12px; font-size:12px; color:var(--mut); line-height:1.6;
+            border:1px dashed var(--bd); border-radius:9px; padding:10px 12px; background:#fbfaf7; }
+    .shot button { font:inherit; font-size:12px; padding:3px 9px; margin-right:6px; cursor:pointer;
+                   border:1px solid var(--bd); border-radius:6px; background:#fff; }
+    /* The capture is the one thing here worth doing, so it does not look like its own siblings. */
+    .shot #shotGrab { font-size:13px; font-weight:600; padding:6px 14px;
+                      color:#fff; background:var(--acc); border-color:var(--acc); }
+    .shot #shotGrab:hover { filter:brightness(1.12); }
+    .shot #shotNote { display:block; margin-top:6px; }
+    #shotPreview { display:block; max-width:100%; max-height:22vh; margin-top:8px;
+                   border:1px solid var(--bd); border-radius:8px; }
+    /* an explicit display: beats the UA's [hidden] rule, so restate it */
+    #shotPreview[hidden], .shot button[hidden] { display:none; }
+    #reportBody { max-height:30vh; overflow:auto; margin:0 0 14px;
+                  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; line-height:1.6;
+                  color:#555; background:#f3f1ea; border:1px solid var(--bd); border-radius:8px;
+                  padding:8px 10px; white-space:pre-wrap; word-break:break-all; }
+    #report menu { display:flex; justify-content:flex-end; gap:8px; margin:0; padding:0; }
+    #report menu button { font:inherit; font-size:13px; padding:5px 12px; cursor:pointer;
+                          border:1px solid var(--bd); border-radius:7px; background:#fff; }
+    #report menu button#reportGo { border-color:var(--acc); background:var(--acc); color:#fff; }
+    footer { margin-top:14px; font-size:12px; color:var(--mut); }
+    footer a { color:var(--acc); text-decoration:none; }
+    footer a:hover { text-decoration:underline; }
+    .opts { margin:0 0 8px; font-size:13px; color:var(--mut); }
+    .opts label { cursor:pointer; }
+    .opts input { vertical-align:-2px; margin-right:6px; }
+    .opts .note { margin-left:8px; }
+    .opts .count { margin-left:8px; color:var(--acc); }
+</style>
+</head>
+<body>
+    <h1>Mongolian encoding converter <span class="h1zh">蒙古语编码转换</span><span id="status">loading WASM… / 加载中…</span></h1>
+
+    <div id="alert">
+        <span id="alertMsg"></span>
+        <button type="button" id="alertReport">Report / 报个问题</button>
+        <button type="button" id="alertClose" aria-label="dismiss / 关闭" hidden>×</button>
+    </div>
+
+    <div class="opts">
+        <label for="repair"><input type="checkbox" id="repair" checked>Repair suffix separators / 矫正后缀分隔符</label>
+        <span class="note">menk letter / delehi input only: a space before a known suffix becomes NNBSP so it shapes as a suffix / 仅对 menk letter、delehi 输入生效：已知后缀前的空格改为 NNBSP，使其按后缀显示</span>
+        <span class="count" id="repairCount"></span>
+    </div>
+
+    <div class="panes">
+        <div class="pane" id="paneL">
+            <div class="cap"><select id="encL"></select><span><span class="ro-badge" id="badgeL" hidden>read-only</span> Left / 左</span></div>
+            <div class="mongwrap" id="wrapL"><div class="mong bd" id="bdL" aria-hidden="true"></div><textarea class="mong" id="boxL" placeholder="选编码 / 由中间转入"></textarea></div>
+            <div class="hex" id="hexL"></div>
+        </div>
+        <div class="arrow" id="arrow1">⇄</div>
+        <div class="pane hub" id="paneM">
+            <div class="cap"><span>zvvnmod · hub / 中间码</span></div>
+            <div class="mongwrap" id="wrapM"><div class="mong bd" id="bdM" aria-hidden="true"></div><textarea class="mong" id="boxM" placeholder="Zvvnmod 中间码"></textarea></div>
+            <div class="hex" id="hexM"></div>
+        </div>
+        <div class="arrow" id="arrow2" title="one-way: hub → right / 单向：中间码 → 右栏">→</div>
+        <div class="pane" id="paneR">
+            <div class="cap"><select id="encR"></select><span class="capbtns"><button type="button" id="copyR" title="copy the right box / 复制右栏文本">Copy / 复制</button><button type="button" id="copyRevR" title="copy with the lines in reverse order, last line first / 按行倒序复制，最后一行变第一行">Reverse copy / 反向复制</button></span><span><span class="ro-badge" id="badgeR" hidden>read-only</span> Right / 右</span></div>
+            <div class="mongwrap" id="wrapR"><div class="mong bd" id="bdR" aria-hidden="true"></div><textarea class="mong" id="boxR" placeholder="选编码 / 由中间转入"></textarea></div>
+            <div class="hex" id="hexR"></div>
+        </div>
+    </div>
+
+    <footer><a href="../">← other tools / 其他工具</a> · <a href="https://github.com/Satsrag/mongol-convert">Satsrag/mongol-convert</a>
+        · <a href="#" id="forget" title="clear the encodings and text this browser remembers / 清空本浏览器记住的编码选择和文本">forget local memory / 清除本地记忆</a></footer>
+
+
+    <dialog id="report">
+        <div class="rp">
+            <h2>Report a problem / 报个问题</h2>
+            <p>Below is <b>everything that will be submitted</b>; nothing else leaves this page.
+                <b>Open on GitHub</b> opens a prefilled issue form in a new tab — you can still edit it
+                there, and you press submit yourself. <b>Draft with Copilot</b> instead puts a prompt
+                and this data on your clipboard and opens Copilot to paste into.
+                <span class="zh">下面是<b>将要提交的全部内容</b>，此外不会发送任何东西。「在 GitHub 打开」
+                会在新标签打开预填好的 issue 表单，内容还能改，最后由你自己按提交；「用 Copilot 起草」则把
+                提示词和这些数据拷到剪贴板并打开 Copilot。</span></p>
+            <label for="reportWhat">What went wrong? Optional — you can also write it on GitHub. / 出了什么问题？可留空。</label>
+            <textarea id="reportWhat" rows="2" placeholder="e.g. ᠰᠠᠶᠢᠨ to utn57, the final letter should be ᠨ / 例：尾字母应该是 ᠨ"></textarea>
+            <div class="shot">
+                <button type="button" id="shotGrab">📷 Add a screenshot / 加一张截图</button>
+                <button type="button" id="shotDrop" hidden>Remove / 移除</button>
+                <button type="button" id="shotSave" hidden>Download PNG / 下载 PNG</button>
+                <span id="shotNote">A GitHub link cannot carry an image, so the screenshot goes to your clipboard — paste it into the issue. / GitHub 的链接塞不进图片，所以截图放进剪贴板，你在 issue 里粘贴即可。</span>
+                <img id="shotPreview" alt="截图预览" hidden>
+            </div>
+            <pre id="reportBody"></pre>
+            <menu>
+                <button type="button" id="reportCancel">Cancel / 取消</button>
+                <button type="button" id="reportCopy">Copy / 复制</button>
+                <button type="button" id="reportAI" title="copies a prompt plus this data and opens Copilot to paste into / 拷贝提示词和数据并打开 Copilot">Draft with Copilot / 用 Copilot 起草</button>
+                <button type="button" id="reportGo">Open on GitHub / 在 GitHub 打开</button>
+            </menu>
+        </div>
+    </dialog>
+
+<script type="module">
+import init, { restore_menk_shape_emoji, translate, translate_with_warnings, translate_with_options, version } from "./pkg/mongol_convert_wasm.js";
+
+const SIDE_TYPES = ["z52", "menk_shape", "menk_letter", "delehi", "utn57", "utn57_shape"]; // oyun still deferred
+// Every one of these reads and writes; the left/right split is a layout choice about where you
+// type, not a limit on what mongol-convert can decode.
+const SOURCE_TYPES = SIDE_TYPES;
+// The encodings whose input mongol-convert can repair (a space before a known suffix → NNBSP). The checkbox
+// is ignored, not an error, for the others.
+const REPAIRABLE = ["menk_letter", "delehi"];
+const repairOn = enc => $("repair").checked && REPAIRABLE.includes(enc);
+const TARGET_TYPES = ["utn57", ...SIDE_TYPES.filter(t=>t!=="utn57")]; // utn57 leads the output side
+
+// The national standard each Unicode-side encoding follows. z52 and menk_shape are vendor shape
+// codes with no standard behind them, so they stay bare.
+const STD = { delehi:"GB/T 25914-2010", menk_letter:"GB/T 25914-2010", utn57:"GB/T 25914-2023" };
+const STD_NOTE = {
+    delehi:      "Delehi international encoding · its own reading of GB/T 25914-2010, absolute FVS "
+               + "semantics / 德力海国际编码，以 2010 国标为基础的自定解释，FVS 绝对语义",
+    menk_letter: "Menksoft international standard encoding · the literal implementation of GB/T "
+               + "25914-2010 appendix A, relative FVS semantics / 蒙科立国际标准编码，2010 国标附录 A 的"
+               + "字面实现，FVS 相对语义",
+    utn57:       "GB/T 25914-2023 / UTN #57 rev.4 · absolute semantics, adds FVS4 U+180F / "
+               + "绝对语义，新增 FVS4 U+180F",
+    utn57_shape: "The UTN #57 text spelled as its written units (mongol-norm shape): ᠰᠠᠢᠨ is SAIIA, "
+               + "Mvs/Nirugu/Zwj are tokens; input also takes S+A+I+I+A / UTN #57 文本的书写单元拼写"
+               + "（mongol-norm shape）：ᠰᠠᠢᠨ 写作 SAIIA，Mvs/Nirugu/Zwj 是 token；输入也接受 S+A+I+I+A",
+};
+const FONTS = {
+    zvvnmod:"'zvvn mod'", delehi:"'delehi'", menk_letter:"'menk letter'",
+    menk_shape:"'menk shape'", z52:"'z52'", utn57:"'utn57'",
+    utn57_shape:"ui-monospace, Menlo, Consolas, monospace",   // ASCII: no Mongolian font needed
+};
+const FALLBACK = ",'zvvn mod',sans-serif";
+const SPECIAL = {0x0020:"SP",0x202f:"NNBSP",0x180e:"MVS",0x180b:"FVS1",0x180c:"FVS2",0x180d:"FVS3",
+                 0x180f:"FVS4",0x180a:"NIRUGU",0x200d:"ZWJ",0x200c:"ZWNJ"};
+const $ = id => document.getElementById(id);
+let CORE = "?"; // filled in once the wasm module reports its version
+
+// --- "is this character even in the selected encoding?" -------------------
+// The encodings live in disjoint parts of the code space: the letter encodings are standard Unicode
+// Hudum, z52 borrows the Todo/Sibe/Manchu range as shape codes, and zvvnmod/menk_shape are PUA.
+// Anything neutral — space, NNBSP, MVS, FVS, punctuation, ASCII, CJK — is never flagged, because
+// mongol-convert passes it through by design; only a letter from the *wrong* encoding is a real mistake.
+function cls(cp){
+    if(cp>=0xE000 && cp<=0xF8FF) return "pua";
+    if(cp>=0x1820 && cp<=0x1842) return "hudum";
+    if(cp>=0x1843 && cp<=0x18AA) return "ext";
+    return null;
+}
+const EXPECT = { zvvnmod:"pua", menk_shape:"pua", z52:"ext",
+                 delehi:"hudum", menk_letter:"hudum", utn57:"hudum" };
+function foreign(cp, enc){ const c = cls(cp); return c !== null && c !== EXPECT[enc]; }
+
+const esc = t => t.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"})[c]);
+
+// The backdrop under a textarea: the same text, with out-of-encoding characters in red, and — when
+// `hl` is a [from, to) UTF-16 range — the characters inside it lit up, toned down when `echo`.
+function paint(text, enc, hl, echo){
+    let out = "", run = "", bad = null, lit = null, i = 0;
+    const flush = ()=>{
+        if(!run) return;
+        const c = [bad && "bad", lit && "hl", lit && echo && "echo"].filter(Boolean).join(" ");
+        out += c ? `<span class="${c}">${esc(run)}</span>` : esc(run);
+        run = "";
+    };
+    for(const ch of text){
+        const f = foreign(ch.codePointAt(0), enc), l = !!hl && i >= hl[0] && i < hl[1];
+        if(f !== bad || l !== lit){ flush(); bad = f; lit = l; }
+        run += ch; i += ch.length;
+    }
+    flush();
+    return out + (text.endsWith("\n") ? " " : ""); // a trailing newline needs something to hold it
+}
+
+// --- local memory --------------------------------------------------------
+// Per-browser only: the selected encoding/font of each side plus what is in the three boxes, so a
+// reload lands you where you left off. Every access is guarded — storage throws outright in some
+// privacy modes, and a page that cannot remember must still work.
+const LS_KEY = "mongol-convert-wasm-demo/v1";
+function saveState(){
+    try{
+        localStorage.setItem(LS_KEY, JSON.stringify({
+            encL:$("encL").value, encR:$("encR").value, repair:$("repair").checked,
+            L:$("boxL").value, M:$("boxM").value, R:$("boxR").value,
+        }));
+    }catch(e){ /* storage unavailable — carry on without memory */ }
+}
+function loadState(){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY)) || null; }
+    catch(e){ return null; }
+}
+function forgetState(){
+    try{ localStorage.removeItem(LS_KEY); }catch(e){}
+    location.reload();
+}
+
+// One cell per code point, tagged with the UTF-16 range it occupies in the textarea, so selecting
+// text in a box can light up exactly the code points it covers.
+function hex(s, enc){
+    if(!s) return "";
+    const cells = []; let i = 0;
+    for(const ch of s){
+        const cp = ch.codePointAt(0), n = SPECIAL[cp], from = i;
+        i += ch.length;
+        cells.push(`<span class="cu${foreign(cp,enc)?" bad":""}" data-a="${from}" data-b="${i}">`
+            + `U+${cp.toString(16).toUpperCase().padStart(4,"0")}`
+            + `${n?` <span class="tag">${n}</span>`:""}</span>`);
+    }
+    return cells.join("  ");
+}
+
+// Repaint one pane's backdrop and code-point row from its current text and encoding.
+function paintPane(which){
+    const enc = encOf(which), text = $("box"+which).value;
+    HL[which] = null;
+    $("bd"+which).innerHTML = paint(text, enc);
+    $("hex"+which).innerHTML = hex(text, enc);
+}
+
+// Scroll a cell into view inside its own row — never via scrollIntoView, which would also move the
+// page — and only when it is actually out of sight.
+function reveal(row, el){
+    const r = el.getBoundingClientRect(), c = row.getBoundingClientRect(), pad = 4;
+    if(r.top < c.top)           row.scrollTop  += r.top - c.top - pad;
+    else if(r.bottom > c.bottom) row.scrollTop  += r.bottom - c.bottom + pad;
+    if(r.left < c.left)         row.scrollLeft += r.left - c.left - pad;
+    else if(r.right > c.right)   row.scrollLeft += r.right - c.right + pad;
+}
+
+// Light up the code-point cells inside `hl` (a [from, to) UTF-16 range, or null for none) and bring
+// the first of them into view — the row is capped in height, so a long text hides most of it.
+function markCells(which, hl, echo){
+    const row = $("hex"+which);
+    let first = null;
+    row.querySelectorAll(".cu").forEach(el=>{
+        const hit = !!hl && +el.dataset.a < hl[1] && +el.dataset.b > hl[0];
+        el.classList.toggle("sel", hit);
+        el.classList.toggle("echo", hit && !!echo);
+        if(hit && !first) first = el;
+    });
+    if(first) reveal(row, first);
+}
+// Mark the cells covered by the box's own selection; returns that range, or null for a bare caret.
+function markSel(which){
+    const box = $("box"+which), a = box.selectionStart, b = box.selectionEnd;
+    const hl = b > a ? [a, b] : null;
+    markCells(which, hl);
+    return hl;
+}
+
+// --- the other direction: code-point row → box ---------------------------
+// The [from, to) UTF-16 range currently lit in each box's backdrop, so a repeated selectionchange
+// does not repaint for nothing.
+const HL = { L:null, M:null, R:null }; // each: [from, to, echo] or null
+
+// Light up `hl` (a [from, to) range, or null for none) in the box's backdrop and scroll the box so
+// the start of it is in sight. The backdrop mirrors the textarea's scroll, so measuring the lit
+// span against the textarea and moving the textarea is enough; the mirror is nudged by hand too,
+// because the scroll event a programmatic scroll fires arrives a frame later.
+function markBox(which, hl, echo){
+    echo = !!echo;
+    const was = HL[which];
+    const same = (was === null && hl === null)
+        || (was && hl && was[0] === hl[0] && was[1] === hl[1] && was[2] === echo);
+    if(same) return;
+    HL[which] = hl ? [hl[0], hl[1], echo] : null;
+    const box = $("box"+which), bd = $("bd"+which);
+    bd.innerHTML = paint(box.value, encOf(which), hl, echo);
+    const first = bd.querySelector(".hl");
+    if(first){
+        reveal(box, first);
+        bd.scrollTop = box.scrollTop; bd.scrollLeft = box.scrollLeft;
+    }
+}
+
+// Which code-point row the document selection sits in, and the cells it touches: a drag covers
+// every cell it crosses, a bare click the one cell under the caret. Null when the selection is
+// somewhere else entirely.
+function hexSel(){
+    const sel = document.getSelection();
+    if(!sel || sel.rangeCount === 0 || !sel.anchorNode) return null;
+    const node = sel.anchorNode, el = node.nodeType === 1 ? node : node.parentElement;
+    const row = el && el.closest(".hex");
+    if(!row) return null;
+    let cells;
+    if(sel.isCollapsed){
+        const one = el.closest(".cu");
+        cells = one ? [one] : [];
+    }else{
+        const range = sel.getRangeAt(0);
+        cells = [...row.querySelectorAll(".cu")].filter(c=>range.intersectsNode(c));
+    }
+    return { which: row.id.slice(3), cells };
+}
+
+// Mark the given cells of a row as selected, and light up the characters they stand for in the
+// box above it. Returns the range they span, or null when there are none.
+function markHex(which, cells){
+    const hl = cells.length
+        ? [Math.min(...cells.map(c=>+c.dataset.a)), Math.max(...cells.map(c=>+c.dataset.b))] : null;
+    markCells(which, hl);
+    markBox(which, hl);
+    return hl;
+}
+
+// --- echoing a selection across panes ------------------------------------
+// The three texts are the same words in three encodings, but a word rarely has the same number of
+// code points in each, so characters cannot be matched one to one. Cut points can. The hub text
+// was converted from one side and converted into the other, and a position p in the source of
+// such a conversion is a cut when converting the text up to p yields exactly the converted text
+// up to some q. Candidates are the edges of every run of spaces / NNBSP and every line end —
+// word boundaries, which the converters treat as context breaks — and each one is verified by
+// actually converting, so a boundary a converter does not respect (a suffix after NNBSP that
+// became MVS, say) is simply dropped and its word merges with its neighbour. A selection then
+// echoes as the span between the nearest cuts around it. (Guessing separators instead fails
+// exactly there: utn57 writes the suffix connector as MVS, which is also a letter-internal mark.)
+const SEPS = /[  \t\r]+/g;
+let budget = 0; // characters this alignment may still convert; word cuts stop when it runs out
+function conv(from, to, s){
+    budget -= s.length;
+    try{ return repairOn(from) ? translate_with_options(from, to, s, true).text : translate(from, to, s); }
+    catch(e){ return null; }
+}
+
+// Verified cut pairs [p, q] between `a` and `b`, where `b` is `a` converted from → to, ascending
+// on both sides from [0, 0] to the ends. Null when `b` is not in fact that conversion.
+function cutPairs(from, to, a, b){
+    if(conv(from, to, a) !== b) return null;
+    const cuts = [[0, 0]];
+    let qa = 0, qb = 0;               // aligned so far: a[:qa] ↔ b[:qb]
+    const lines = a.split("\n");
+    for(let i = 0; i < lines.length; i++){
+        const la = lines[i], last = i === lines.length - 1;
+        const out = conv(from, to, la);
+        const fits = out !== null && b.startsWith(out, qb)
+            && (last ? qb + out.length === b.length : b[qb + out.length] === "\n");
+        if(fits){
+            let m; SEPS.lastIndex = 0;
+            while(budget > 0 && (m = SEPS.exec(la))){
+                for(const p of [m.index, m.index + m[0].length]){
+                    if(p === 0 || p === la.length) continue;
+                    const pre = conv(from, to, la.slice(0, p));
+                    if(pre !== null && out.startsWith(pre)) cuts.push([qa + p, qb + pre.length]);
+                }
+            }
+            qa += la.length; qb += out.length;
+        }else{
+            // the line does not convert on its own; settle for its end, via the whole text so far
+            const pre = conv(from, to, a.slice(0, qa + la.length));
+            if(pre === null || !b.startsWith(pre)) break;
+            qa += la.length; qb = pre.length;
+        }
+        if(!last){ cuts.push([qa, qb]); qa += 1; qb += 1; cuts.push([qa, qb]); }
+    }
+    cuts.push([a.length, b.length]);
+    const asc = [];                   // strictly ascending on both sides, or the bracketing breaks
+    for(const c of cuts){
+        const l = asc[asc.length - 1];
+        if(!l || (c[0] > l[0] && c[1] > l[1])) asc.push(c);
+    }
+    return asc;
+}
+
+// The hub is the pivot: for each side, cut pairs [pM, pX], found in whichever direction the two
+// texts were actually converted. Memoised on the encodings and texts, since it only changes when
+// they do, and building it converts every line a few dozen times.
+let alignKey = null, alignPairs = null;
+function alignment(){
+    const t = { L:$("boxL").value, M:$("boxM").value, R:$("boxR").value };
+    const key = [encOf("L"), encOf("R"), t.L, t.M, t.R].join("\0");
+    if(key === alignKey) return alignPairs;
+    alignKey = key; budget = 4e6;
+    const side = x => {
+        if(!t.M || !t[x]) return null;
+        const mx = cutPairs("zvvnmod", encOf(x), t.M, t[x]);
+        if(mx) return mx;
+        const xm = cutPairs(encOf(x), "zvvnmod", t[x], t.M);
+        return xm ? xm.map(c => [c[1], c[0]]) : null;
+    };
+    alignPairs = { L: side("L"), R: side("R") };
+    return alignPairs;
+}
+// The span between the nearest cuts around `hl` on side `i` of `pairs`, read off the other side.
+function bracket(pairs, i, hl){
+    let lo = pairs[0], hi = pairs[pairs.length - 1];
+    for(const c of pairs){ if(c[i] <= hl[0]) lo = c; if(c[i] >= hl[1]){ hi = c; break; } }
+    return [lo[1 - i], hi[1 - i]];
+}
+// The [from, to) range in pane `to` that stands for `hl` in pane `from`, or null when the two
+// cannot be aligned. Side to side goes through the hub.
+function echoRange(from, hl, to){
+    if(!hl) return null;
+    const al = alignment();
+    const toHub   = x => al[x] ? bracket(al[x], 1, hl) : null;
+    const fromHub = (x, h) => al[x] && h ? bracket(al[x], 0, h) : null;
+    if(from === "M") return fromHub(to, hl);
+    if(to === "M")   return toHub(from);
+    return fromHub(to, toHub(from));
+}
+
+// One selection drives everything: a box with focus lights its own code-point row (box → row); a
+// selection inside a code-point row lights the box above it (row → box); either way the other two
+// panes echo the words it covers, box and row alike. With no selection anywhere, all six are dark.
+function syncSel(){
+    const h = hexSel();
+    let origin = null, range = null;
+    ["L","M","R"].forEach(x=>{
+        if(document.activeElement === $("box"+x)){ origin = x; range = markSel(x); markBox(x, null); }
+        else if(h && h.which === x){ origin = x; range = markHex(x, h.cells); }
+    });
+    ["L","M","R"].forEach(x=>{
+        if(x === origin) return;
+        const r = origin ? echoRange(origin, range, x) : null;
+        markCells(x, r, true);
+        markBox(x, r, true);
+    });
+}
+function fillSel(sel, def, types){ types.forEach(t=>{
+    const o=document.createElement("option"); o.value=t;
+    o.textContent = STD[t] ? `${t} · ${STD[t]}` : t;
+    if(STD_NOTE[t]) o.title = STD_NOTE[t];
+    if(t===def) o.selected=true; sel.appendChild(o);
+}); }
+function encOf(which){ return which==="M" ? "zvvnmod" : (which==="L" ? $("encL").value : $("encR").value); }
+// Left is the input side, right is output. Only the left selector is restricted to encodings mongol-convert
+// can decode; the right may name any target, utn57 included.
+function applySide(which){
+    const box = $("box"+which), ro = which === "R";
+    $("wrap"+which).style.fontFamily = FONTS[$("enc"+which).value]+FALLBACK;
+    box.readOnly = ro;
+    box.placeholder = ro ? "output only / 只读输出" : "type here / 在此输入";
+    $("pane"+which).classList.toggle("ro", ro);
+    $("badge"+which).hidden = !ro;
+}
+function applyFonts(){
+    applySide("L");
+    $("wrapM").style.fontFamily = FONTS.zvvnmod+FALLBACK;
+    applySide("R");
+}
+// Returns the converted string, or null after recording why it failed in `errs[slot]`. What the
+// conversion had to do beyond the input — today, a ZWJ the UTN #57 encoder invented because the hub
+// has no glyph for that position — lands in `warns[slot]`, one message per affected run.
+const errs = {};
+const warns = {};
+// Separator repairs made on the way in (one message per edit). They are expected work, not a
+// warning, so they are counted next to the checkbox rather than raised in the alert bar.
+let repairs = [];
+let lastSrc = "L"; // the box last converted from; the checkbox re-runs that conversion
+function normalizeBox(which){
+    if(encOf(which) !== "menk_shape") return;
+    const box = $("box"+which), restored = restore_menk_shape_emoji(box.value);
+    if(restored === box.value) return;
+    box.value = restored;
+    box.selectionStart = box.selectionEnd = box.value.length;
+}
+function tr(from,to,s,slot,repair){
+    errs[slot] = null;
+    warns[slot] = [];
+    if(s==="") return "";
+    try{
+        const r = repair ? translate_with_options(from,to,s,true) : translate_with_warnings(from,to,s);
+        warns[slot] = r.warnings;
+        if(repair) repairs = r.repairs;
+        return r.text;
+    }
+    catch(e){ errs[slot] = (e && e.message) || String(e); return null; }
+}
+function showRepairs(srcEnc){
+    const el = $("repairCount");
+    if(!$("repair").checked) el.textContent = "";
+    else if(!REPAIRABLE.includes(srcEnc)) el.textContent = `not applied to ${srcEnc} input / 对 ${srcEnc} 输入不生效`;
+    else el.textContent = repairs.length ? `${repairs.length} repaired / 已矫正 ${repairs.length} 处` : "nothing to repair / 无需矫正";
+}
+
+// Rerun the conversion for one side, in whichever direction that side can go. Changing a selector
+// calls this: picking a new encoding on the left means "re-read what I typed as that encoding", so
+// the left pane becomes the source and redrives the hub and the right pane. The right pane is
+// output only, so a new encoding there just re-encodes it from the hub.
+function reconvert(which){
+    if(which !== "R"){ recompute(which); return; }
+    errs[which] = null; warns[which] = [];
+    const out = tr("zvvnmod", encOf(which), $("boxM").value, which);
+    $("box"+which).value = out===null ? "" : out;
+    paintPane(which);
+    if(errs[which]) $("hex"+which).innerHTML = `<span class="err">${encOf(which)}: ${errs[which]}</span>`;
+    updateAlert();
+    saveState();
+}
+
+// recompute from a source box ("L" | "M" | "R")
+function recompute(src){
+    errs.L = errs.M = errs.R = null;
+    warns.L = warns.M = warns.R = [];
+    normalizeBox(src);
+    const val = $("box"+src).value;
+    const srcEnc = encOf(src);
+    lastSrc = src;
+    repairs = [];
+    // to hub
+    let zv = src==="M" ? val : tr(srcEnc,"zvvnmod",val,src,repairOn(srcEnc));
+    showRepairs(srcEnc);
+    const fail = (x,msg)=>{ $("hex"+x).innerHTML = `<span class="err">${msg}</span>`; };
+    if(zv===null){ // source failed to decode
+        ["L","M","R"].filter(x=>x!==src).forEach(x=>{ $("box"+x).value=""; paintPane(x); fail(x,"conversion failed / 转换错误"); });
+        paintPane(src);
+        return;
+    }
+    if(src!=="M") $("boxM").value = zv;
+    for(const x of ["L","M","R"]){
+        if(x===src || x==="M") continue; // the hub is already set
+        const out = tr("zvvnmod", encOf(x), zv, x);
+        $("box"+x).value = out===null ? "" : out;
+    }
+    ["L","M","R"].forEach(x=>{
+        paintPane(x);
+        if(x!==src && errs[x]) fail(x, `${encOf(x)}: ${errs[x]}`);
+    });
+    updateAlert();
+    saveState();
+}
+
+// --- reporting -----------------------------------------------------------
+// Nothing is ever sent from this page. The report button assembles the state into a prefilled
+// GitHub issue URL, shows it in full, and only opens it when you say so; you submit it yourself.
+const ISSUE_NEW = "https://github.com/Satsrag/mongol-convert/issues/new";
+const clip = (t,n)=> t.length > n ? t.slice(0,n) + ` … (截断，共 ${t.length} 字符)` : t;
+
+// Each pane contributes both forms: the raw text, which can be pasted straight back into the
+// converter to reproduce, and the code points, which say unambiguously what that text is when the
+// glyphs are PUA or the difference is an invisible FVS.
+function paneField(which){
+    const t = $("box"+which).value;
+    const cps = Array.from(t).map(c =>
+        "U+" + c.codePointAt(0).toString(16).toUpperCase().padStart(4,"0")).join(" ");
+    return `text: ${clip(t, 300) || "(空)"}\ncode: ${clip(cps, 900) || "(空)"}`;
+}
+function diagnostics(){
+    return {
+        "from-encoding": encOf("L"),
+        "to-encoding": encOf("R"),
+        "input":  paneField("L"),
+        "hub":    paneField("M"),
+        "actual": paneField("R"),
+        "mongol-convert-error": errs.L || errs.M || errs.R || "",
+        "mongol-convert-warning": allWarnings().join("\n"),
+        "screenshot": "",   // filled in by pasting; the URL cannot carry an image
+        "environment": [
+            `core: ${CORE} (wasm)`,
+            `repair: ${$("repair").checked ? "on" : "off"}${repairs.length ? " (" + repairs.length + " edits)" : ""}`,
+            `page: ${location.href}`,
+            `fonts: ${[...document.fonts].map(f=>f.family+"="+f.status).join(" ")}`,
+            `ua: ${navigator.userAgent}`,
+        ].join("\n"),
+    };
+}
+const LABEL = {
+    "from-encoding":"Source encoding / 源编码", "to-encoding":"Target encoding / 目标编码",
+    "input":"Input / 输入", "hub":"Hub / 中间码 zvvnmod", "actual":"Actual output / 实际输出",
+    "mongol-convert-error":"Error from mongol-convert / mongol-convert 报错", "mongol-convert-warning":"Warning from mongol-convert / mongol-convert 警告",
+    "environment":"Environment / 环境",
+};
+const reportText = d => Object.entries(d)
+    .map(([k,v]) => `${k}:\n${(v||"(空)").split("\n").map(l=>"  "+l).join("\n")}`).join("\n\n");
+
+// Markdown body for the *blank* issue form. GitHub only honours `title` and `body` there; the
+// per-field ids below work solely once the issue form exists on the default branch. Sending both
+// means the button is useful either way — whichever one the URL resolves to gets filled.
+function issueBody(d, what){
+    const block = k => "```\n" + (d[k] || "(空)") + "\n```";
+    return [
+        "### What went wrong / 出了什么问题", "", what || "_(to be filled in / 待补充)_", "",
+        `### ${LABEL["from-encoding"]}`, "", "`"+d["from-encoding"]+"`", "",
+        `### ${LABEL["to-encoding"]}`, "", "`"+d["to-encoding"]+"`", "",
+        `### ${LABEL["input"]}`, "", block("input"), "",
+        `### ${LABEL["hub"]}`, "", block("hub"), "",
+        `### ${LABEL["actual"]}`, "", block("actual"), "",
+        "### Expected output / 期望输出", "", "_(to be filled in / 待补充)_", "",
+        `### ${LABEL["mongol-convert-error"]}`, "", block("mongol-convert-error"), "",
+        `### ${LABEL["mongol-convert-warning"]}`, "", block("mongol-convert-warning"), "",
+        "### Screenshot / 截图", "",
+        shot ? "_(on your clipboard — paste it here with Cmd/Ctrl+V / 截图已复制到剪贴板，在这一行粘贴)_"
+             : "_(none / 无)_", "",
+        `### ${LABEL["environment"]}`, "", block("environment"), "",
+    ].join("\n");
+}
+function issueUrl(d, what){
+    const q = new URLSearchParams({
+        template: "converter-bug.yml",                                  // structured form, once merged
+        title: `[convert] ${d["from-encoding"]} → ${d["to-encoding"]}`,
+        what: what || "",
+        ...d,
+        body: issueBody(d, what),                                       // fallback for the blank form
+    });
+    return `${ISSUE_NEW}?${q}`;
+}
+
+// Copilot has no documented URL parameter for a prefilled prompt, so hand the prompt over through
+// the clipboard and open Copilot for pasting. It honours the repo's issue form when it drafts.
+const COPILOT = "https://github.com/copilot";
+const aiPrompt = (d, what) => [
+    "在 Satsrag/mongol-convert 仓库建一个 issue，用 converter-bug.yml 表单。",
+    "这是蒙古文编码转换器的问题。下面是页面采集的诊断数据，请据此写标题和描述；",
+    "**码点序列原样保留，一个字符都不要改写或省略**。",
+    what ? `\n用户的说明：${what}` : "",
+    "\n" + reportText(d),
+].join("\n");
+// GitHub's prefilled-issue URL carries text only, so a screenshot travels via the clipboard and is
+// pasted into the issue body, where GitHub uploads it. Frames come from getDisplayMedia — real
+// rendered pixels, fonts and vertical layout included, which a DOM-to-canvas library would not get
+// right for a transparent textarea over a backdrop in `writing-mode: vertical-lr`.
+let shot = null; // Blob
+const canShoot = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+
+async function grabShot(){
+    $("report").classList.add("capturing");
+    // let the hide actually paint before any frame can be grabbed
+    await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
+    let stream;
+    try{ stream = await navigator.mediaDevices.getDisplayMedia({
+             video: { displaySurface: "browser" }, audio: false, preferCurrentTab: true }); }
+    catch(e){ $("report").classList.remove("capturing"); throw e; }
+    try{
+        const video = Object.assign(document.createElement("video"), { srcObject: stream, muted: true });
+        await video.play();
+        await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r))); // let a frame land
+        const c = Object.assign(document.createElement("canvas"),
+                                { width: video.videoWidth, height: video.videoHeight });
+        c.getContext("2d").drawImage(video, 0, 0);
+        return await new Promise(r => c.toBlob(r, "image/png"));
+    } finally {
+        stream.getTracks().forEach(t=>t.stop());
+        $("report").classList.remove("capturing");
+    }
+}
+function showShot(blob){
+    shot = blob;
+    $("shotPreview").hidden = !blob;
+    $("shotDrop").hidden = $("shotSave").hidden = !blob;
+    $("shotGrab").textContent = blob ? "📷 Retake / 重新截图" : "📷 Add a screenshot / 加一张截图";
+    if(blob) $("shotPreview").src = URL.createObjectURL(blob);
+}
+async function shotToClipboard(){
+    if(!shot || !window.ClipboardItem) return false;
+    try{ await navigator.clipboard.write([new ClipboardItem({ "image/png": shot })]); return true; }
+    catch(e){ return false; }
+}
+
+function openReport(){
+    const d = diagnostics();
+    $("reportWhat").value = "";
+    showShot(null);
+    $("shotGrab").hidden = !canShoot;
+    if(!canShoot) $("shotNote").textContent = "This browser cannot capture the page; take a screenshot yourself and paste it into the issue. / 此浏览器不支持抓帧，自己截图后粘贴即可。";
+    $("reportBody").textContent = reportText(d);
+    $("report").dataset.payload = JSON.stringify(d);
+    $("report").showModal();
+}
+
+// The bar is always there — the report entry point should never be hunted for. It only turns red
+// when mongol-convert actually throws. Out-of-encoding text is already obvious from the red marking and is
+// usually the wrong encoding picked rather than a bug, so it does not raise the alarm.
+const IDLE_MSG = "A conversion looks wrong? Report it — the code points go along automatically. "
+               + "/ 转换结果不对？点右边报一下，码点会自动带上。";
+let shown = null;
+function idle(){
+    $("alert").classList.remove("bad", "warn");
+    $("alertMsg").textContent = IDLE_MSG;
+    $("alertClose").hidden = true;
+}
+const allWarnings = () => ["L","M","R"].flatMap(x => warns[x] || []);
+function updateAlert(){
+    const err = errs.L || errs.M || errs.R || null;
+    const warning = err ? null : allWarnings().join("\n") || null;
+    const raise = err || warning;
+    if(!raise){ idle(); shown = null; return; }
+    if(raise === shown) return;            // same failure or warning, already raised or dismissed
+    shown = raise;
+    $("alert").classList.remove("bad", "warn");
+    $("alert").classList.add(err ? "bad" : "warn");
+    $("alertMsg").textContent = err
+        ? "Conversion failed / 转换报错: " + err
+        : "Converted with a warning / 转换成功但有警告: " + warning;
+    $("alertClose").hidden = false;
+}
+
+function wire(){
+    const st = loadState();
+    const pick = (v,def) => TARGET_TYPES.includes(v) ? v : def;
+    fillSel($("encL"), SOURCE_TYPES.includes(st && st.encL) ? st.encL : "z52", SOURCE_TYPES);
+    fillSel($("encR"), pick(st && st.encR, "menk_shape"), TARGET_TYPES);
+    if(st && typeof st.repair === "boolean") $("repair").checked = st.repair; // default: on
+    applyFonts();
+    if(st){ // restore text verbatim: re-running the conversion could rewrite what you left here
+        ["L","M","R"].forEach(x=>{ $("box"+x).value = st[x] || ""; });
+    }
+    ["L","M","R"].forEach(paintPane);
+    idle();
+    $("forget").onclick = e => { e.preventDefault(); forgetState(); };
+    $("alertReport").onclick = openReport;
+    $("alertClose").onclick = idle;   // back to the calm state; the same error will not re-raise
+    $("reportCancel").onclick = ()=>$("report").close();
+    // Put `text` on the clipboard and flash the outcome on `btn`, restoring its label afterwards.
+    async function copyWith(btn, text){
+        const label = btn.textContent;
+        try{ await navigator.clipboard.writeText(text); btn.textContent = "Copied ✓ / 已复制"; }
+        catch(e){ btn.textContent = "Copy failed / 复制失败"; }
+        setTimeout(()=>{ btn.textContent = label; }, 1600);
+    }
+    // Lines in reverse order, last line first. A trailing newline stays at the end rather than
+    // turning into a leading blank line.
+    function reverseLines(s){
+        const tail = s.endsWith("\n") ? "\n" : "";
+        const body = tail ? s.slice(0, -1) : s;
+        return body.split("\n").reverse().join("\n") + tail;
+    }
+    $("copyR").onclick    = ()=>copyWith($("copyR"),    $("boxR").value);
+    $("copyRevR").onclick = ()=>copyWith($("copyRevR"), reverseLines($("boxR").value));
+    $("reportCopy").onclick = ()=>copyWith($("reportCopy"),
+        ($("reportWhat").value.trim() + "\n\n" + $("reportBody").textContent).trim());
+    $("shotGrab").onclick = async ()=>{
+        $("shotGrab").disabled = true;
+        const was = $("shotGrab").textContent;
+        $("shotGrab").textContent = "pick the tab to capture… / 选择要截的标签页…";
+        try{ showShot(await grabShot()); $("shotNote").textContent =
+                "It goes to your clipboard when you press Open on GitHub — paste it into the issue's "
+                + "Screenshot field. / 点「在 GitHub 打开」时放进剪贴板，到 issue 的截图栏粘贴。"; }
+        catch(e){ $("shotNote").textContent = "No capture (cancelled?) / 没有截成: " + (e.message || e);
+                  showShot(null); }
+        finally { $("shotGrab").disabled = false;
+                  if($("shotGrab").textContent.startsWith("pick the tab")) $("shotGrab").textContent = was; }
+    };
+    $("shotDrop").onclick = ()=>showShot(null);
+    $("shotSave").onclick = ()=>{
+        const a = Object.assign(document.createElement("a"),
+            { href: URL.createObjectURL(shot), download: "mongol-convert-convert.png" });
+        a.click(); URL.revokeObjectURL(a.href);
+    };
+    $("reportAI").onclick = async ()=>{
+        const d = JSON.parse($("report").dataset.payload);
+        try{
+            await navigator.clipboard.writeText(aiPrompt(d, $("reportWhat").value.trim()));
+            window.open(COPILOT, "_blank", "noopener");
+            $("report").close();
+        }catch(e){
+            $("reportAI").textContent = "Copy failed — use Copy / 复制失败";
+            setTimeout(()=>{ $("reportAI").textContent = "Draft with Copilot / 用 Copilot 起草"; }, 2200);
+        }
+    };
+    $("reportGo").onclick = async ()=>{
+        const d = JSON.parse($("report").dataset.payload);
+        if(shot && !await shotToClipboard()){
+            $("shotNote").textContent = "The browser would not put an image on the clipboard — use Download PNG and drag the file into the issue. / 剪贴板放不下图片，请点「下载 PNG」再拖进 issue。";
+            return;                                  // don't navigate away from the only copy
+        }
+        window.open(issueUrl(d, $("reportWhat").value.trim()), "_blank", "noopener");
+        $("report").close();
+    };
+    const deb = src => {
+        normalizeBox(src);
+        paintPane(src);
+        clearTimeout(window._t);
+        window._t = setTimeout(()=>recompute(src),120);
+    };
+    $("boxL").addEventListener("input",()=>deb("L"));
+    $("boxM").addEventListener("input",()=>deb("M"));
+    $("boxR").addEventListener("input",()=>deb("R"));
+    // `selectionchange` on a textarea is the modern signal; the rest keeps older engines honest.
+    ["L","M","R"].forEach(x=>$("box"+x).addEventListener("scroll", ()=>{
+        $("bd"+x).scrollTop = $("box"+x).scrollTop; $("bd"+x).scrollLeft = $("box"+x).scrollLeft;
+    }));
+    document.addEventListener("selectionchange", syncSel);
+    ["L","M","R"].forEach(x=>["select","mouseup","keyup","focus","blur"].forEach(ev=>
+        $("box"+x).addEventListener(ev, syncSel)));
+    ["L","M","R"].forEach(x=>$("hex"+x).addEventListener("mouseup", syncSel));
+    $("encL").onchange = ()=>{ applySide("L"); reconvert("L"); };
+    $("encR").onchange = ()=>{ applySide("R"); reconvert("R"); };
+    $("repair").onchange = ()=>{ alignKey = null; recompute(lastSrc); };
+}
+
+init().then(()=>{
+    CORE = version();
+    $("status").textContent = "WASM ready ✓ / 就绪  core v"+CORE;
+    wire();
+}).catch(e=>{ $("status").innerHTML = `<span class="err">WASM failed to load / 加载失败: ${e}</span>`; });
+</script>
+</body>
+</html>

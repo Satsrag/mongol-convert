@@ -1,5 +1,5 @@
 # Release pipeline (download model): on a version tag, build every platform artifact from the one
-# Rust core, publish meco-core to crates.io, and attach every platform artifact to a GitHub Release.
+# Rust core, publish mongol-convert to crates.io, and attach every platform artifact to a GitHub Release.
 # crates.io publication uses Trusted Publishing (GitHub OIDC) from the protected `crates-io`
 # environment; no long-lived registry token is stored in GitHub.
 #
@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           version=$(cargo metadata --no-deps --format-version 1 \
-            | jq -r '.packages[] | select(.name == "meco-core") | .version')
+            | jq -r '.packages[] | select(.name == "mongol-convert") | .version')
           test "$GITHUB_REF_NAME" = "v$version"
           git fetch --force origin main:refs/remotes/origin/main \
             "refs/tags/$GITHUB_REF_NAME:refs/tags/release-remote" --no-tags
@@ -45,15 +45,15 @@ jobs:
         run: |
           set -euo pipefail
           version=$(cargo metadata --no-deps --format-version 1 \
-            | jq -r '.packages[] | select(.name == "meco-core") | .version')
-          archive="target/package/meco-core-$version.crate"
-          rm -rf "target/package/meco-core-$version" "$archive"
-          cargo package -p meco-core --locked
+            | jq -r '.packages[] | select(.name == "mongol-convert") | .version')
+          archive="target/package/mongol-convert-$version.crate"
+          rm -rf "target/package/mongol-convert-$version" "$archive"
+          cargo package -p mongol-convert --locked
           local_checksum=$(sha256sum "$archive" | cut -d' ' -f1)
           status=$(curl --fail-with-body --retry 3 --retry-connrefused \
             --user-agent 'mongol-convert-release-workflow' --output /tmp/crates-version.json \
             --write-out '%{http_code}' \
-            "https://crates.io/api/v1/crates/meco-core/$version" || true)
+            "https://crates.io/api/v1/crates/mongol-convert/$version" || true)
           case "$status" in
             404)
               echo 'publish=true' >> "$GITHUB_OUTPUT"
@@ -62,7 +62,7 @@ jobs:
               remote_checksum=$(jq -er '.version.checksum' /tmp/crates-version.json)
               test "$local_checksum" = "$remote_checksum"
               echo 'publish=false' >> "$GITHUB_OUTPUT"
-              echo "meco-core $version already exists with the expected checksum"
+              echo "mongol-convert $version already exists with the expected checksum"
               ;;
             *)
               echo "unexpected crates.io response: HTTP $status" >&2
@@ -81,9 +81,9 @@ jobs:
         if: steps.registry.outputs.publish == 'true'
         id: auth
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
-      - name: Publish meco-core to crates.io
+      - name: Publish mongol-convert to crates.io
         if: steps.registry.outputs.publish == 'true'
-        run: cargo publish -p meco-core --locked --registry crates-io --no-verify
+        run: cargo publish -p mongol-convert --locked --registry crates-io --no-verify
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Verify crates.io publication
@@ -91,14 +91,14 @@ jobs:
         run: |
           set -euo pipefail
           version=$(cargo metadata --no-deps --format-version 1 \
-            | jq -r '.packages[] | select(.name == "meco-core") | .version')
-          archive="target/package/meco-core-$version.crate"
+            | jq -r '.packages[] | select(.name == "mongol-convert") | .version')
+          archive="target/package/mongol-convert-$version.crate"
           local_checksum=$(sha256sum "$archive" | cut -d' ' -f1)
           for attempt in {1..18}; do
             status=$(curl --retry 3 --retry-connrefused \
               --user-agent 'mongol-convert-release-workflow' --output /tmp/crates-version.json \
               --write-out '%{http_code}' \
-              "https://crates.io/api/v1/crates/meco-core/$version" || true)
+              "https://crates.io/api/v1/crates/mongol-convert/$version" || true)
             case "$status" in
               200)
                 remote_checksum=$(jq -er '.version.checksum' /tmp/crates-version.json)
@@ -115,10 +115,10 @@ jobs:
                 ;;
             esac
           done
-          echo "timed out waiting for meco-core $version on crates.io" >&2
+          echo "timed out waiting for mongol-convert $version on crates.io" >&2
           exit 1
 
-  # C ABI: static (.a/.lib) + dynamic (.so/.dylib/.dll) + meco.h, per platform — for C / Go-cgo /
+  # C ABI: static (.a/.lib) + dynamic (.so/.dylib/.dll) + mongol_convert.h, per platform — for C / Go-cgo /
   # Python / Dart / Java / any language that loads a C library.
   c-libs:
     strategy:
@@ -139,22 +139,22 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
           echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
-      - run: cargo build -p meco-cabi --release --target ${{ matrix.target }}
+      - run: cargo build -p mongol-convert-cabi --release --target ${{ matrix.target }}
       - name: stage
         shell: bash
         run: |
-          d=meco-c-${{ matrix.name }}; mkdir -p "$d"
-          cp crates/meco-cabi/meco.h "$d"/
+          d=mongol-convert-c-${{ matrix.name }}; mkdir -p "$d"
+          cp crates/mongol-convert-cabi/mongol_convert.h "$d"/
           libdir=target/${{ matrix.target }}/release
           case "${{ matrix.name }}" in
             linux-x86_64|linux-aarch64)
-              cp "$libdir/libmeco.a" "$libdir/libmeco.so" "$d"/
+              cp "$libdir/libmongol_convert.a" "$libdir/libmongol_convert.so" "$d"/
               ;;
             macos-arm64|macos-x86_64)
-              cp "$libdir/libmeco.a" "$libdir/libmeco.dylib" "$d"/
+              cp "$libdir/libmongol_convert.a" "$libdir/libmongol_convert.dylib" "$d"/
               ;;
             windows-x86_64)
-              cp "$libdir/meco.lib" "$libdir/meco.dll" "$libdir/meco.dll.lib" "$d"/
+              cp "$libdir/mongol_convert.lib" "$libdir/mongol_convert.dll" "$libdir/mongol_convert.dll.lib" "$d"/
               ;;
             *)
               echo "unknown C artifact matrix entry: ${{ matrix.name }}" >&2
@@ -162,7 +162,7 @@ jobs:
               ;;
           esac
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with: { name: "meco-c-${{ matrix.name }}", path: "meco-c-${{ matrix.name }}" }
+        with: { name: "mongol-convert-c-${{ matrix.name }}", path: "mongol-convert-c-${{ matrix.name }}" }
 
   # WebAssembly npm packages as downloadable browser/web and Node tarballs.
   wasm:
@@ -176,24 +176,24 @@ jobs:
       - name: package browser/web target
         run: |
           version="${GITHUB_REF_NAME#v}"
-          wasm-pack build crates/meco-wasm --target web --out-dir pkg-web --out-name meco --locked
-          (cd crates/meco-wasm/pkg-web && npm pack)
-          mv crates/meco-wasm/pkg-web/*.tgz "meco-wasm-web-${version}.tgz"
+          wasm-pack build crates/mongol-convert-wasm --target web --out-dir pkg-web --out-name mongol_convert --locked
+          (cd crates/mongol-convert-wasm/pkg-web && npm pack)
+          mv crates/mongol-convert-wasm/pkg-web/*.tgz "mongol-convert-wasm-web-${version}.tgz"
       - name: package and verify Mongolian conversion skill
-        run: python3 tools/package-mongolian-convert.py --wasm-dir crates/meco-wasm/pkg-web
+        run: python3 tools/package-mongolian-convert.py --wasm-dir crates/mongol-convert-wasm/pkg-web
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: meco-skills
+          name: mongol-convert-skills
           path: target/skills/mongolian-convert-*.zip*
           if-no-files-found: error
       - name: package Node target
         run: |
           version="${GITHUB_REF_NAME#v}"
-          wasm-pack build crates/meco-wasm --target nodejs --out-dir pkg-node --out-name meco
-          (cd crates/meco-wasm/pkg-node && npm pack)
-          mv crates/meco-wasm/pkg-node/*.tgz "meco-wasm-nodejs-${version}.tgz"
+          wasm-pack build crates/mongol-convert-wasm --target nodejs --out-dir pkg-node --out-name mongol_convert
+          (cd crates/mongol-convert-wasm/pkg-node && npm pack)
+          mv crates/mongol-convert-wasm/pkg-node/*.tgz "mongol-convert-wasm-nodejs-${version}.tgz"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with: { name: meco-wasm-npm, path: "meco-wasm-*.tgz" }
+        with: { name: mongol-convert-wasm-npm, path: "mongol-convert-wasm-*.tgz" }
 
   # Apple xcframeworks: Swift (UniFFI) for Swift apps, and the C ABI for Objective-C / C.
   apple:
@@ -205,39 +205,39 @@ jobs:
         with: { targets: "aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios" }
       - name: Swift xcframework (UniFFI)
         run: |
-          cargo build -p meco-uniffi --release --target aarch64-apple-ios
-          cargo build -p meco-uniffi --release --target aarch64-apple-ios-sim
-          cargo build -p meco-uniffi --release --target x86_64-apple-ios
-          cargo run -p meco-uniffi --bin uniffi-bindgen -- generate \
-            --library target/aarch64-apple-ios/release/libmeco_uniffi.dylib --language swift --out-dir sw
+          cargo build -p mongol-convert-uniffi --release --target aarch64-apple-ios
+          cargo build -p mongol-convert-uniffi --release --target aarch64-apple-ios-sim
+          cargo build -p mongol-convert-uniffi --release --target x86_64-apple-ios
+          cargo run -p mongol-convert-uniffi --bin uniffi-bindgen -- generate \
+            --library target/aarch64-apple-ios/release/libmongol_convert_uniffi.dylib --language swift --out-dir sw
           mkdir -p hdr && cp sw/*.h sw/*.modulemap hdr/
           lipo -create \
-            target/aarch64-apple-ios-sim/release/libmeco_uniffi.a \
-            target/x86_64-apple-ios/release/libmeco_uniffi.a \
-            -output libmeco_uniffi-simulator.a
+            target/aarch64-apple-ios-sim/release/libmongol_convert_uniffi.a \
+            target/x86_64-apple-ios/release/libmongol_convert_uniffi.a \
+            -output libmongol_convert_uniffi-simulator.a
           xcodebuild -create-xcframework \
-            -library target/aarch64-apple-ios/release/libmeco_uniffi.a -headers hdr \
-            -library libmeco_uniffi-simulator.a -headers hdr \
-            -output MecoSwift.xcframework
-          zip -r MecoSwift.xcframework.zip MecoSwift.xcframework sw/meco_uniffi.swift
+            -library target/aarch64-apple-ios/release/libmongol_convert_uniffi.a -headers hdr \
+            -library libmongol_convert_uniffi-simulator.a -headers hdr \
+            -output MongolConvertSwift.xcframework
+          zip -r MongolConvertSwift.xcframework.zip MongolConvertSwift.xcframework sw/mongol_convert_uniffi.swift
       - name: C ABI xcframework (ObjC / C)
         run: |
-          cargo build -p meco-cabi --release --target aarch64-apple-ios
-          cargo build -p meco-cabi --release --target aarch64-apple-ios-sim
-          cargo build -p meco-cabi --release --target x86_64-apple-ios
-          mkdir -p ch && cp crates/meco-cabi/meco.h ch/
-          printf 'module Meco { header "meco.h"\n export * }\n' > ch/module.modulemap
+          cargo build -p mongol-convert-cabi --release --target aarch64-apple-ios
+          cargo build -p mongol-convert-cabi --release --target aarch64-apple-ios-sim
+          cargo build -p mongol-convert-cabi --release --target x86_64-apple-ios
+          mkdir -p ch && cp crates/mongol-convert-cabi/mongol_convert.h ch/
+          printf 'module MongolConvert { header "mongol_convert.h"\n export * }\n' > ch/module.modulemap
           lipo -create \
-            target/aarch64-apple-ios-sim/release/libmeco.a \
-            target/x86_64-apple-ios/release/libmeco.a \
-            -output libmeco-simulator.a
+            target/aarch64-apple-ios-sim/release/libmongol_convert.a \
+            target/x86_64-apple-ios/release/libmongol_convert.a \
+            -output libmongol_convert-simulator.a
           xcodebuild -create-xcframework \
-            -library target/aarch64-apple-ios/release/libmeco.a -headers ch \
-            -library libmeco-simulator.a -headers ch \
-            -output MecoC.xcframework
-          zip -r MecoC.xcframework.zip MecoC.xcframework
+            -library target/aarch64-apple-ios/release/libmongol_convert.a -headers ch \
+            -library libmongol_convert-simulator.a -headers ch \
+            -output MongolConvertC.xcframework
+          zip -r MongolConvertC.xcframework.zip MongolConvertC.xcframework
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with: { name: meco-apple, path: "*.xcframework.zip" }
+        with: { name: mongol-convert-apple, path: "*.xcframework.zip" }
 
   # Android AAR (UniFFI Kotlin + cargo-ndk .so for all ABIs).
   android:
@@ -256,13 +256,13 @@ jobs:
       - run: cargo install cargo-ndk --version 4.1.2 --locked
       - run: |
           cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 \
-            -o bindings/android/src/main/jniLibs build -p meco-uniffi --release
-          cargo run -p meco-uniffi --bin uniffi-bindgen -- generate \
-            --library target/aarch64-linux-android/release/libmeco_uniffi.so \
+            -o bindings/android/src/main/jniLibs build -p mongol-convert-uniffi --release
+          cargo run -p mongol-convert-uniffi --bin uniffi-bindgen -- generate \
+            --library target/aarch64-linux-android/release/libmongol_convert_uniffi.so \
             --language kotlin --out-dir bindings/android/src/main/kotlin
           cd bindings/android && gradle assembleRelease
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with: { name: meco-android-aar, path: bindings/android/build/outputs/aar/*.aar }
+        with: { name: mongol-convert-android-aar, path: bindings/android/build/outputs/aar/*.aar }
 
   # Gather everything and cut a downloadable GitHub Release.
   release:
@@ -287,18 +287,18 @@ jobs:
       - name: zip per-platform C libs
         run: |
           cd artifacts
-          for d in meco-c-*; do zip -r "../$d.zip" "$d"; done
+          for d in mongol-convert-c-*; do zip -r "../$d.zip" "$d"; done
           cd ..
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           generate_release_notes: true
           files: |
-            meco-c-*.zip
-            artifacts/meco-wasm-npm/*.tgz
-            artifacts/meco-skills/*.zip
-            artifacts/meco-skills/*.sha256
-            artifacts/meco-apple/*.zip
-            artifacts/meco-android-aar/*.aar
+            mongol-convert-c-*.zip
+            artifacts/mongol-convert-wasm-npm/*.tgz
+            artifacts/mongol-convert-skills/*.zip
+            artifacts/mongol-convert-skills/*.sha256
+            artifacts/mongol-convert-apple/*.zip
+            artifacts/mongol-convert-android-aar/*.aar
 
   # Publish the browser converter to the tools site.
   #
@@ -349,7 +349,7 @@ jobs:
           cargo install wasm-bindgen-cli --version "$version" --locked
       - name: Build the page into the site checkout
         if: steps.key.outputs.present == 'true'
-        run: bash crates/meco-wasm/web/build.sh "$GITHUB_WORKSPACE/site/convert"
+        run: bash crates/mongol-convert-wasm/web/build.sh "$GITHUB_WORKSPACE/site/convert"
       - name: Commit and push if anything moved
         if: steps.key.outputs.present == 'true'
         working-directory: site
@@ -362,6 +362,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add convert
-          git commit -m "deploy(convert): meco ${GITHUB_REF_NAME#v}" \
-            -m "Built from Satsrag/mongol-convert crates/meco-wasm/web at ${GITHUB_REF_NAME}."
+          git commit -m "deploy(convert): mongol-convert ${GITHUB_REF_NAME#v}" \
+            -m "Built from Satsrag/mongol-convert crates/mongol-convert-wasm/web at ${GITHUB_REF_NAME}."
           git push

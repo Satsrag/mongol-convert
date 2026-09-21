@@ -1,7 +1,7 @@
-// Android library module producing an AAR for `implementation("com.zvvnmod:meco-android:<ver>")`.
+// Android library module producing an AAR for `implementation("com.zvvnmod:mongol-convert-android:<ver>")`.
 // The release CI fills in the two generated inputs before building:
-//   - src/main/kotlin/uniffi/meco_uniffi/meco_uniffi.kt   (uniffi-bindgen --language kotlin)
-//   - src/main/jniLibs/<abi>/libmeco_uniffi.so            (cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 ...)
+//   - src/main/kotlin/uniffi/mongol_convert_uniffi/mongol_convert_uniffi.kt   (uniffi-bindgen --language kotlin)
+//   - src/main/jniLibs/<abi>/libmongol_convert_uniffi.so            (cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 ...)
 plugins {
     id("com.android.library") version "8.5.0"
     id("org.jetbrains.kotlin.android") version "2.0.0"
@@ -9,10 +9,10 @@ plugins {
 }
 
 group = "com.zvvnmod"
-version = "0.6.1"
+version = "0.7.0"
 
 android {
-    namespace = "com.zvvnmod.meco"
+    namespace = "com.zvvnmod.mongolconvert"
     compileSdk = 34
     defaultConfig {
         minSdk = 21

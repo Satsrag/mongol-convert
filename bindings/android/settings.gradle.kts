@@ -11,4 +11,4 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "meco-android"
+rootProject.name = "mongol-convert-android"

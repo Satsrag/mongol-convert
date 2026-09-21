@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/meco-core", "crates/meco-cabi", "crates/meco-uniffi", "crates/meco-wasm"]
+members = ["crates/mongol-convert", "crates/mongol-convert-cabi", "crates/mongol-convert-uniffi", "crates/mongol-convert-wasm"]
 
 # Future members (added as the port progresses):
-#   "tools/table-gen"   — generator that emits crates/meco-core/src/tables/generated/*.rs
-#   "crates/meco-wasm"  — wasm-bindgen binding (web)
-#   "crates/meco-uniffi"— UniFFI binding (iOS/Android)
-#   "crates/meco-cabi"  — C ABI binding (PHP-FFI / cgo / JNI·Panama)
+#   "tools/table-gen"   — generator that emits crates/mongol-convert/src/tables/generated/*.rs
+#   "crates/mongol-convert-wasm"  — wasm-bindgen binding (web)
+#   "crates/mongol-convert-uniffi"— UniFFI binding (iOS/Android)
+#   "crates/mongol-convert-cabi"  — C ABI binding (PHP-FFI / cgo / JNI·Panama)
 
 [workspace.package]
 edition = "2021"

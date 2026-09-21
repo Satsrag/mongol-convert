@@ -1,4 +1,4 @@
 interface:
   display_name: "Cyrillic to Traditional Mongolian"
-  short_description: "Transliterate Mongolian and convert its encoding with meco"
-  default_prompt: "Use $mongolian-convert to transliterate the following Cyrillic Mongolian into traditional Mongolian, run meco to repair suffix separators, and deliver the configured target encoding."
+  short_description: "Transliterate Mongolian and convert its encoding with mongol-convert"
+  default_prompt: "Use $mongolian-convert to transliterate the following Cyrillic Mongolian into traditional Mongolian, run mongol-convert to repair suffix separators, and deliver the configured target encoding."

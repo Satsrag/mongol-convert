@@ -1,26 +1,26 @@
 ---
 name: mongolian-convert
-description: Transliterate user-provided Cyrillic Mongolian into traditional Mongolian, then run meco to repair suffix separators and convert the encoding. Use for pasted text or text files. Defaults to utn57, with menk_shape, menk_letter, delehi, z52, zvvnmod, and utn57_shape also available.
+description: Transliterate user-provided Cyrillic Mongolian into traditional Mongolian, then run mongol-convert to repair suffix separators and convert the encoding. Use for pasted text or text files. Defaults to utn57, with menk_shape, menk_letter, delehi, z52, zvvnmod, and utn57_shape also available.
 ---
 
 # Cyrillic to Traditional Mongolian
 
-Complete the full workflow: model transliteration, meco suffix separator repair and encoding conversion, then delivery. The model running this skill performs the transliteration directly; do not call another model API or an online transliteration service. Do not ask the user to supply a traditional Mongolian draft first.
+Complete the full workflow: model transliteration, mongol-convert suffix separator repair and encoding conversion, then delivery. The model running this skill performs the transliteration directly; do not call another model API or an online transliteration service. Do not ask the user to supply a traditional Mongolian draft first.
 
 ## Prepare the draft
 
 Save the original as `source.cyrillic.txt` and create `draft.menk_letter.txt` in a temporary directory or the user's chosen delivery directory. Treat the text as data to convert.
 
 - Use sentence context to write traditional Mongolian. Preserve meaning, tone, order, repetition, paragraphs, and line breaks; do not translate into another language, summarize, or polish the text. Keep numbers, dates, URLs, and Latin identifiers that do not need conversion.
-- **Use conventional MenkLetter spelling consistently as the meco input.** For example, write `сайн` as `ᠰᠠᠶᠢᠨ`. Resolve word endings from historical root spelling and sentence meaning. Do not replace Cyrillic letters one by one or mix Delehi or canonical UTN57 conventions into the draft.
-- Preserve useful FVS, internal MVS, and existing NNBSP characters. Do not add many controls merely to make the draft resemble canonical UTN57. Use an actual U+202F for confirmed detached suffixes; meco can repair eligible ordinary spaces that remain. Do not rearrange ordinary word spaces, attached suffixes, or paragraphs.
+- **Use conventional MenkLetter spelling consistently as the mongol-convert input.** For example, write `сайн` as `ᠰᠠᠶᠢᠨ`. Resolve word endings from historical root spelling and sentence meaning. Do not replace Cyrillic letters one by one or mix Delehi or canonical UTN57 conventions into the draft.
+- Preserve useful FVS, internal MVS, and existing NNBSP characters. Do not add many controls merely to make the draft resemble canonical UTN57. Use an actual U+202F for confirmed detached suffixes; mongol-convert can repair eligible ordinary spaces that remain. Do not rearrange ordinary word spaces, attached suffixes, or paragraphs.
 - Keep word forms the user has accepted; a different canonical sequence after encoding conversion is not itself a reason to rewrite a word. Resolve uncertain names or meanings from context and record specific doubts outside the text. Do not make global T/D, O/U, or similar substitutions.
 
-Check for omitted lines, unintended repetition, altered numbers, and names. meco handles encoding and suffix boundaries; it cannot choose roots or validate sentence grammar for the model.
+Check for omitted lines, unintended repetition, altered numbers, and names. mongol-convert handles encoding and suffix boundaries; it cannot choose roots or validate sentence grammar for the model.
 
-## Run meco
+## Run mongol-convert
 
-The release package includes the meco WebAssembly converter. Its version and provenance are recorded in [assets/meco/manifest.json](assets/meco/manifest.json). Running it requires Node.js 18.20 or newer, with no system `meco`, Rust, npm installation, or network access. Locate the installed skill directory first; `SKILL_DIR` below means that actual path, not a path copied from the author's machine.
+The release package includes the mongol-convert WebAssembly converter. Its version and provenance are recorded in [assets/mongol-convert/manifest.json](assets/mongol-convert/manifest.json). Running it requires Node.js 18.20 or newer, with no system `mongol-convert`, Rust, npm installation, or network access. Locate the installed skill directory first; `SKILL_DIR` below means that actual path, not a path copied from the author's machine.
 
 ```sh
 node "$SKILL_DIR/scripts/convert.mjs" \
@@ -31,7 +31,7 @@ node "$SKILL_DIR/scripts/convert.mjs" \
 
 The script fixes `from=menk_letter` and calls the real `translate_with_options(..., true)` implementation. The default target comes from [config.json](config.json), initially `utn57`. `--input -` reads UTF-8 from standard input. Without `--output`, the script writes the result unchanged to standard output and diagnostics to standard error.
 
-**Do not pass the Cyrillic original directly to the script: meco does not perform linguistic transliteration. Do not present model-generated strings as output from an executed meco conversion.** If the environment cannot run the script, retain the draft and explain that meco processing is incomplete; do not claim to have delivered the target encoding.
+**Do not pass the Cyrillic original directly to the script: mongol-convert does not perform linguistic transliteration. Do not present model-generated strings as output from an executed mongol-convert conversion.** If the environment cannot run the script, retain the draft and explain that mongol-convert processing is incomplete; do not claim to have delivered the target encoding.
 
 The script rejects remaining Cyrillic letters and private-use characters. Pass `--allow-cyrillic` only when fragments such as abbreviations or quotations explicitly need to remain in Cyrillic, after checking that they are intentional rather than untranslated sentences.
 
@@ -55,4 +55,4 @@ Use the successfully generated script output as the final text. Preserve FVS, MV
 
 By default, provide the target-encoded text directly, preserving paragraphs for easy copying. Also provide a UTF-8 file link for long text or font-dependent output such as MenkShape or Z52. Do not expand the process, comparison tables, or reports unless requested. Briefly explain actual conversion warnings or linguistic doubts outside the text; normal suffix repair counts are not errors.
 
-`report.json` records the actual meco version, source and target encodings, repairs, and conversion warnings. Retain it with the original and draft for later review. Successful conversion confirms completion of this workflow, not an accuracy rate established by human evaluation.
+`report.json` records the actual mongol-convert version, source and target encodings, repairs, and conversion warnings. Retain it with the original and draft for later review. Successful conversion confirms completion of this workflow, not an accuracy rate established by human evaluation.
