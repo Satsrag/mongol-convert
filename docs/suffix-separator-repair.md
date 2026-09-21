@@ -19,7 +19,7 @@ spelling is therefore whether an ordinary space before it is, in practice, a los
   explicitly discusses nuγud/nügüd and luγ-a/lüge as separately written suffixes.
 - [L2/10-279, section 2.1.4](https://www.unicode.org/L2/L2010/10279-mongolian-rendering.pdf)
   identifies luγa/lüge as masculine/feminine comitative suffixes.
-- The existing [Delehi golden corpus](../crates/meco-core/tests/golden/corpus_delehi.txt)
+- The existing [Delehi golden corpus](../crates/mongol-convert/tests/golden/corpus_delehi.txt)
   includes `ᠭᠡᠷ ᠨᠦᠭᠦᠳ` and `ᠭᠡᠷ ᠯᠦᠭᠡ`. It supplies converter examples, not a grammar gold set.
   It also writes `ᠮᠣᠷᠢ ᠪᠡᠷ`, `ᠨᠢᠳᠦ ᠪᠠᠨ` and `ᠬᠡᠨ ᠲᠠᠢ`: suffix harmony in Delehi
   input does not follow the stem.

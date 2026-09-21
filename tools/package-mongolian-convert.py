@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package the skill source with web-target meco bindings and dependency licenses."""
+"""Package the skill source with web-target mongol-convert bindings and dependency licenses."""
 
 import argparse
 import hashlib
@@ -29,7 +29,7 @@ def runtime_packages(metadata):
     """Walk normal WASM dependencies, excluding build scripts and proc macros."""
     packages = {p["id"]: p for p in metadata["packages"]}
     nodes = {n["id"]: n for n in metadata["resolve"]["nodes"]}
-    pending = [p["id"] for p in packages.values() if p["name"] == "meco-wasm"]
+    pending = [p["id"] for p in packages.values() if p["name"] == "mongol-convert-wasm"]
     seen = set()
     while pending:
         package_id = pending.pop()
@@ -49,7 +49,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--wasm-dir", type=Path, required=True,
-        help="Web-target bindings containing meco.js and meco_bg.wasm",
+        help="Web-target bindings containing mongol_convert.js and mongol_convert_bg.wasm",
     )
     parser.add_argument("--out-dir", type=Path, default=ROOT / "target" / "skills")
     args = parser.parse_args()
@@ -59,12 +59,12 @@ def main():
         "--filter-platform", "wasm32-unknown-unknown",
     ))
     packages = runtime_packages(metadata)
-    version = next(p["version"] for p in packages if p["name"] == "meco-core")
+    version = next(p["version"] for p in packages if p["name"] == "mongol-convert")
     commit = command("git", "rev-parse", "HEAD")
     files = {name: (SKILL / name).read_bytes() for name in SOURCE_FILES}
-    files["assets/meco/meco.mjs"] = (args.wasm_dir / "meco.js").read_bytes()
-    files["assets/meco/meco_bg.wasm"] = (args.wasm_dir / "meco_bg.wasm").read_bytes()
-    files["assets/meco/licenses/meco-LICENSE.txt"] = (ROOT / "LICENSE").read_bytes()
+    files["assets/mongol-convert/mongol_convert.mjs"] = (args.wasm_dir / "mongol_convert.js").read_bytes()
+    files["assets/mongol-convert/mongol_convert_bg.wasm"] = (args.wasm_dir / "mongol_convert_bg.wasm").read_bytes()
+    files["assets/mongol-convert/licenses/mongol-convert-LICENSE.txt"] = (ROOT / "LICENSE").read_bytes()
 
     dependencies = []
     for package in packages:
@@ -81,7 +81,7 @@ def main():
         names = []
         for license_file in licenses:
             name = f"{package['name']}-{package['version']}-{license_file.name}"
-            files[f"assets/meco/licenses/{name}"] = license_file.read_bytes()
+            files[f"assets/mongol-convert/licenses/{name}"] = license_file.read_bytes()
             names.append(name)
         dependencies.append({
             "name": package["name"],
@@ -91,19 +91,19 @@ def main():
         })
 
     manifest = {
-        "meco_version": version,
+        "mongol_convert_version": version,
         "source": f"https://github.com/Satsrag/mongol-convert/tree/{commit}",
         "source_commit": commit,
         "files_sha256": {
-            name.removeprefix("assets/meco/"): hashlib.sha256(content).hexdigest()
-            for name, content in sorted(files.items()) if name.startswith("assets/meco/")
+            name.removeprefix("assets/mongol-convert/"): hashlib.sha256(content).hexdigest()
+            for name, content in sorted(files.items()) if name.startswith("assets/mongol-convert/")
         },
         "dependencies": dependencies,
     }
-    files["assets/meco/manifest.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
+    files["assets/mongol-convert/manifest.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
 
     # Check the assembled package independently of the source checkout before publishing it.
-    with tempfile.TemporaryDirectory(prefix="meco-skill-") as temp:
+    with tempfile.TemporaryDirectory(prefix="mongol-convert-skill-") as temp:
         staged = Path(temp) / "mongolian-convert"
         for name, content in files.items():
             destination = staged / name

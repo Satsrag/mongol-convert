@@ -1,14 +1,14 @@
-import com.zvvnmod.meco.translate.shape.from.z52.FromZ52CodeMapper;
-import com.zvvnmod.meco.translate.shape.to.z52.ToZ52CodeMapper;
-import com.zvvnmod.meco.translate.shape.from.menk.FromMenkShapeCodeMapper;
-import com.zvvnmod.meco.translate.shape.to.menk.ToMenkShapeCodeMapper;
-import com.zvvnmod.meco.translate.letter.from.delehi.FromDelehiCodeMapper;
-import com.zvvnmod.meco.translate.letter.to.delehi.ToDelehiCodeMapper;
-import com.zvvnmod.meco.translate.letter.from.menk.FromMenkLetterCodeMapper;
-import com.zvvnmod.meco.translate.letter.to.menk.ToMenkLetterCodeMapper;
-import com.zvvnmod.meco.translate.word.Z52UnicodeBlock;
-import com.zvvnmod.meco.translate.word.ZvvnModUnicodeBlock;
-import com.zvvnmod.meco.translate.word.CodeMapper;
+import com.zvvnmod.mongolconvert.translate.shape.from.z52.FromZ52CodeMapper;
+import com.zvvnmod.mongolconvert.translate.shape.to.z52.ToZ52CodeMapper;
+import com.zvvnmod.mongolconvert.translate.shape.from.menk.FromMenkShapeCodeMapper;
+import com.zvvnmod.mongolconvert.translate.shape.to.menk.ToMenkShapeCodeMapper;
+import com.zvvnmod.mongolconvert.translate.letter.from.delehi.FromDelehiCodeMapper;
+import com.zvvnmod.mongolconvert.translate.letter.to.delehi.ToDelehiCodeMapper;
+import com.zvvnmod.mongolconvert.translate.letter.from.menk.FromMenkLetterCodeMapper;
+import com.zvvnmod.mongolconvert.translate.letter.to.menk.ToMenkLetterCodeMapper;
+import com.zvvnmod.mongolconvert.translate.word.Z52UnicodeBlock;
+import com.zvvnmod.mongolconvert.translate.word.ZvvnModUnicodeBlock;
+import com.zvvnmod.mongolconvert.translate.word.CodeMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,18 +22,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Generates the committed Rust lookup tables for meco-core by DUMPING the live Java maps
+ * Generates the committed Rust lookup tables for mongol-convert by DUMPING the live Java maps
  * (the authoritative oracle), rather than parsing Java/PHP source. The maps are built by the
  * real Java static initializers (putAll 4-way expansion, buildLocateChar, concatenations, and
  * CodeMapper's duplicate-key guard), so the dump is Java-faithful by construction — zero
  * transcription or parse risk.
  *
- * Output: crates/meco-core/src/tables/generated/*.rs. Mappers become sorted &[(&str,&str)]
+ * Output: crates/mongol-convert/src/tables/generated/*.rs. Mappers become sorted &[(&str,&str)]
  * (binary-searchable, dependency-free); membership sets become sorted &[char].
  * Run from the repo root after `mvn compile`. Re-running regenerates deterministically.
  */
 public class TableDumper {
-    static final String OUT = "meco-rust/crates/meco-core/src/tables/generated/";
+    static final String OUT = "meco-rust/crates/mongol-convert/src/tables/generated/";
 
     public static void main(String[] args) throws Exception {
         Files.createDirectories(Paths.get(OUT));

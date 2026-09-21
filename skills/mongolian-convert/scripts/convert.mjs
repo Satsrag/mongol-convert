@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { initSync, translate_with_options, version } from '../assets/meco/meco.mjs';
+import { initSync, translate_with_options, version } from '../assets/mongol-convert/mongol_convert.mjs';
 
 const skillRoot = new URL('../', import.meta.url);
 const targets = ['utn57', 'menk_shape', 'menk_letter', 'delehi', 'z52', 'zvvnmod', 'utn57_shape'];
@@ -23,7 +23,7 @@ async function main() {
     allowPositionals: false,
   });
   if (values.help) {
-    process.stdout.write(`Convert a MenkLetter draft with the bundled meco converter and suffix repair enabled.
+    process.stdout.write(`Convert a MenkLetter draft with the bundled mongol-convert converter and suffix repair enabled.
 Usage: node convert.mjs --input draft.txt [--to encoding] [--output result.txt] [--report report.json]
 Targets: ${targets.join(', ')}
 Default target: config.json output_encoding (initially utn57).
@@ -34,14 +34,14 @@ This script does not transliterate Cyrillic Mongolian; prepare the MenkLetter dr
     return;
   }
 
-  initSync({ module: await readFile(new URL('assets/meco/meco_bg.wasm', skillRoot)) });
-  const mecoVersion = version();
-  const manifest = JSON.parse(await readFile(new URL('assets/meco/manifest.json', skillRoot), 'utf8'));
-  if (mecoVersion !== manifest.meco_version) {
-    throw new Error(`Expected bundled meco ${manifest.meco_version}, found ${mecoVersion}.`);
+  initSync({ module: await readFile(new URL('assets/mongol-convert/mongol_convert_bg.wasm', skillRoot)) });
+  const converterVersion = version();
+  const manifest = JSON.parse(await readFile(new URL('assets/mongol-convert/manifest.json', skillRoot), 'utf8'));
+  if (converterVersion !== manifest.mongol_convert_version) {
+    throw new Error(`Expected bundled mongol-convert ${manifest.mongol_convert_version}, found ${converterVersion}.`);
   }
   if (values.version) {
-    process.stdout.write(`meco ${mecoVersion} (bundled WebAssembly)\n`);
+    process.stdout.write(`mongol-convert ${converterVersion} (bundled WebAssembly)\n`);
     return;
   }
 
@@ -88,7 +88,7 @@ This script does not transliterate Cyrillic Mongolian; prepare the MenkLetter dr
     converted.free();
   }
   const report = {
-    meco_version: mecoVersion,
+    mongol_convert_version: converterVersion,
     source_encoding: 'menk_letter',
     output_encoding: target,
     repair_suffix_separators: true,
@@ -100,8 +100,8 @@ This script does not transliterate Cyrillic Mongolian; prepare the MenkLetter dr
   if (reportPath) await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
   if (outputPath) await writeFile(outputPath, text, 'utf8');
   else process.stdout.write(text);
-  process.stderr.write(`meco ${mecoVersion}: menk_letter -> ${target}; ${repairs.length} suffix separator(s) repaired.\n`);
-  for (const warning of warnings) process.stderr.write(`meco warning: ${warning}\n`);
+  process.stderr.write(`mongol-convert ${converterVersion}: menk_letter -> ${target}; ${repairs.length} suffix separator(s) repaired.\n`);
+  for (const warning of warnings) process.stderr.write(`mongol-convert warning: ${warning}\n`);
 }
 
 main().catch(error => {

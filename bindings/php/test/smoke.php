@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 // Verify the PHP FFI binding against the Java golden corpus.
-// Run: MECO_LIB=/abs/path/to/libmeco.dylib php -d ffi.enable=1 test/smoke.php
+// Run: MONGOL_CONVERT_LIB=/abs/path/to/libmongol_convert.dylib php -d ffi.enable=1 test/smoke.php
 
-require __DIR__ . '/../src/Meco.php';
+require __DIR__ . '/../src/MongolConvert.php';
 
-use Meco\Meco;
+use MongolConvert\MongolConvert;
 
-$golden = __DIR__ . '/../../../crates/meco-core/tests/golden/golden.tsv';
+$golden = __DIR__ . '/../../../crates/mongol-convert/tests/golden/golden.tsv';
 
 function unesc(string $s): string
 {
@@ -40,7 +40,7 @@ foreach ($buckets as $k => $rows) {
     foreach ($rows as [$inp, $exp]) {
         $total++;
         try {
-            $got = Meco::translate(strtolower($f), strtolower($t), $inp);
+            $got = MongolConvert::translate(strtolower($f), strtolower($t), $inp);
         } catch (\Throwable $e) {
             $got = '<throw:' . $e->getMessage() . '>';
         }
@@ -57,5 +57,5 @@ foreach ($buckets as $k => $rows) {
 }
 
 printf("\nPHP FFI vs Java golden: %d/%d byte-exact\n", $ok, $total);
-printf("version(): %s\n", Meco::version());
+printf("version(): %s\n", MongolConvert::version());
 exit($ok === $total ? 0 : 1);

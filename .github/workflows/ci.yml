@@ -20,11 +20,11 @@ jobs:
       # linked in, so no Python, installer, or command is needed anywhere in CI.
       - run: cargo test --workspace --locked
       - run: rustup toolchain install 1.82.0 --profile minimal
-      - run: cargo +1.82.0 test -p meco-core --all-targets --locked
+      - run: cargo +1.82.0 test -p mongol-convert --all-targets --locked
       # The deprecated no-op feature must keep compiling for existing install commands.
-      - run: cargo +1.82.0 check -p meco-core --features utn57-command --locked
+      - run: cargo +1.82.0 check -p mongol-convert --features utn57-command --locked
       # Ensure the web binding (UTN #57 included) still compiles to wasm.
-      - run: cargo build -p meco-wasm --target wasm32-unknown-unknown --locked
+      - run: cargo build -p mongol-convert-wasm --target wasm32-unknown-unknown --locked
       - name: Install matching wasm-bindgen CLI for skill packaging
         run: |
           version=$(cargo metadata --format-version 1 --locked \
@@ -34,6 +34,6 @@ jobs:
         with: { node-version: '18' }
       - name: Package and test the skill on Node.js 18
         run: |
-          wasm-bindgen --target web --out-name meco --out-dir target/skill-wasm \
-            target/wasm32-unknown-unknown/debug/meco_wasm.wasm
+          wasm-bindgen --target web --out-name mongol_convert --out-dir target/skill-wasm \
+            target/wasm32-unknown-unknown/debug/mongol_convert_wasm.wasm
           python3 tools/package-mongolian-convert.py --wasm-dir target/skill-wasm

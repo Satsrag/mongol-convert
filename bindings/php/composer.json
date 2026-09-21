@@ -1,6 +1,6 @@
 {
-    "name": "zvvnmod/meco",
-    "description": "Mongolian Encoding Converter — PHP FFI binding to the Rust meco core (verified byte-exact vs the original Java).",
+    "name": "zvvnmod/mongol-convert",
+    "description": "Mongolian Encoding Converter — PHP FFI binding to the Rust mongol-convert core (verified byte-exact vs the original Java).",
     "type": "library",
     "license": "Apache-2.0",
     "keywords": ["mongolian", "encoding", "converter", "menk", "z52", "delehi", "ffi"],
@@ -11,7 +11,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Meco\\": "src/"
+            "MongolConvert\\": "src/"
         }
     },
     "suggest": {

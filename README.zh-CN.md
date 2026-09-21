@@ -4,8 +4,6 @@
 
 传统蒙古文编码转换工具，支持 Delehi、MenkLetter、UTN #57、MenkShape、Z52 和 ZVVNMOD 互转。核心用 Rust 编写，提供命令行、Rust 库，以及 C、Swift、Android、WebAssembly 包，全部在本地运行，不依赖外部程序。
 
-> 项目原名 `meco`，目前 crate 和命令仍以 `meco-core` / `meco` 发布。
-
 ## 在线试用
 
 **<https://www.satsrag.dev/convert/>** —— 在浏览器本地运行，不上传任何内容。
@@ -27,12 +25,12 @@
 ## 命令行
 
 ```sh
-cargo install meco-core --locked
+cargo install mongol-convert --locked
 ```
 
 ```sh
-meco translate --from z52 --to utn57 'text'
-meco translate --from delehi --to menk_shape < input.txt > output.txt
+mongol-convert translate --from z52 --to utn57 'text'
+mongol-convert translate --from delehi --to menk_shape < input.txt > output.txt
 ```
 
 省略文本参数时从 stdin 读取。输出末尾不加换行；出错时写 stderr 并返回非零状态。
@@ -40,11 +38,11 @@ meco translate --from delehi --to menk_shape < input.txt > output.txt
 ## Rust 库
 
 ```sh
-cargo add meco-core
+cargo add mongol-convert
 ```
 
 ```rust
-use meco_core::{translate, CodeType};
+use mongol_convert::{translate, CodeType};
 
 let output = translate(CodeType::MenkLetter, CodeType::Utn57, "text")?;
 ```
@@ -55,10 +53,10 @@ let output = translate(CodeType::MenkLetter, CodeType::Utn57, "text")?;
 
 | 平台 | 文件 |
 |---|---|
-| C ABI（Linux / macOS / Windows） | `meco-c-<平台>.zip` |
-| iOS / macOS | `MecoSwift.xcframework.zip`、`MecoC.xcframework.zip` |
-| Android | `meco-android-release.aar` |
-| 浏览器 / Node.js | `meco-wasm-web-<版本>.tgz`、`meco-wasm-nodejs-<版本>.tgz` |
+| C ABI（Linux / macOS / Windows） | `mongol-convert-c-<平台>.zip` |
+| iOS / macOS | `MongolConvertSwift.xcframework.zip`、`MongolConvertC.xcframework.zip` |
+| Android | `mongol-convert-android-release.aar` |
+| 浏览器 / Node.js | `mongol-convert-wasm-web-<版本>.tgz`、`mongol-convert-wasm-nodejs-<版本>.tgz` |
 | Agent skill | `mongolian-convert-<版本>.zip` |
 
 Go、Python、PHP、Java、Dart 等可以通过 C ABI 调用。各语言示例见 [USAGE.md](USAGE.md)，skill 说明见 [skills/mongolian-convert](skills/mongolian-convert/README.md)。
@@ -80,4 +78,4 @@ cargo test --workspace --locked
 
 ## 许可证
 
-Apache-2.0。本项目移植自 Java 版 [east-mod/meco](https://github.com/east-mod/meco)。
+Apache-2.0。本项目原名 `meco`，移植自 Java 版 [east-mod/meco](https://github.com/east-mod/meco)。
