@@ -1,6 +1,6 @@
 //! Menksoft's punctuation glyphs carry no side bearing, so a mark set straight after a word sits
 //! on the last stroke's ink. The gap is written in with Menksoft's own space, `U+E263`, on the
-//! side each mark takes, and removed again on the way back (Satsrag/meco-rust#29).
+//! side each mark takes, and removed again on the way back (Satsrag/mongol-convert#29).
 
 use meco_core::{translate, CodeType};
 

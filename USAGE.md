@@ -1,7 +1,7 @@
 # Using meco on each platform (download model)
 
 Every release attaches ready-to-download artifacts to the **GitHub Releases** page
-(`github.com/Satsrag/meco-rust/releases`). No package-manager account needed — just download and use.
+(`github.com/Satsrag/mongol-convert/releases`). No package-manager account needed — just download and use.
 
 All conversions are the same call everywhere:
 

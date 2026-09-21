@@ -84,7 +84,7 @@ fn escape(s: &str) -> String {
 const IMPLEMENTED: [&str; 5] = ["Zvvnmod", "Z52", "Menk_Shape", "Delehi", "Menk_Letter"];
 
 /// The hub spells the nirugu with ZVVNMOD's own code, E0E5, not Unicode's U+180A: the UTN #57
-/// crate uses that code and every source now agrees on it (Satsrag/meco-rust#29). Java dropped
+/// crate uses that code and every source now agrees on it (Satsrag/mongol-convert#29). Java dropped
 /// the nirugu outright in these rows, so they were already deliberate divergences.
 fn zvvnmod_rust_expected(row: &Row) -> Option<&'static str> {
     if row.from != "Delehi" {

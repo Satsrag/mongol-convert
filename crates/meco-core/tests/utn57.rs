@@ -24,7 +24,7 @@ fn the_hub_boundary_becomes_an_mvs() {
     );
 }
 
-/// ᠲᠠᠯ᠎ᠠ᠎ᠶᠢᠨ — a chachlag A and then a detached suffix, the case from Satsrag/meco-rust#22.
+/// ᠲᠠᠯ᠎ᠠ᠎ᠶᠢᠨ — a chachlag A and then a detached suffix, the case from Satsrag/mongol-convert#22.
 ///
 /// Both separators are MVS in UTN #57 but mean different things: the first belongs to the chachlag
 /// and folds into a single hub code, the second is a suffix boundary and must survive as one. The
@@ -208,7 +208,7 @@ fn utn57_error_variant_display_is_stable() {
     );
 }
 
-/// ᠠᠪᠤᠭᠰᠠᠨ — a bowed unit followed by teeth, the case from Satsrag/meco-rust#26.
+/// ᠠᠪᠤᠭᠰᠠᠨ — a bowed unit followed by teeth, the case from Satsrag/mongol-convert#26.
 ///
 /// Through zvvnmod-utn57 0.1.2 the hub's `B_O_MEDI A_MEDI` came out as `B` + nirugu + `Dd`, the
 /// composite written unit that spells `O A` a second way and renders as a separate loop after the
@@ -235,7 +235,7 @@ fn a_bowl_before_teeth_is_spelled_b_o_not_dd() {
     );
 }
 
-/// ᠠ᠋ᠠ᠊· — a word held open by a nirugu, then a middle dot, the case from Satsrag/meco-rust#29.
+/// ᠠ᠋ᠠ᠊· — a word held open by a nirugu, then a middle dot, the case from Satsrag/mongol-convert#29.
 ///
 /// Two things went wrong on the way to Menk shape: the hub's nirugu was spelled with ZVVNMOD's own
 /// E0E5, which the legacy tables did not know and passed through as a `.notdef` box, and the middle

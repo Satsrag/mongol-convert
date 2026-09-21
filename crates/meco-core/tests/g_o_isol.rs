@@ -1,4 +1,4 @@
-//! ᠬᠦ as a whole word — the case from Satsrag/meco-rust#32.
+//! ᠬᠦ as a whole word — the case from Satsrag/mongol-convert#32.
 //!
 //! ZVVNMOD had no `G i O f` glyph: every other bowed consonant carries both the word-initial and
 //! the medial ligature with a final O, G only the medial one (`E09C`), so the Java tables reached

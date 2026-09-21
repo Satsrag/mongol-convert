@@ -1,4 +1,4 @@
-//! A lone initial glyph written as a word — the case from Satsrag/meco-rust#45.
+//! A lone initial glyph written as a word — the case from Satsrag/mongol-convert#45.
 //!
 //! `AZwj` is the initial A with nothing after it, and the hub keeps it as `E000` (A i). Written
 //! bare in UTN #57 it read back as the isolated A, so the page turned `AZwj` into `A`. mongol-norm

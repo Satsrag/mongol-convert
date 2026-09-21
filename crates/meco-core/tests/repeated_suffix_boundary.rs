@@ -1,5 +1,5 @@
 //! ᠤᠯᠤᠰ + two NNBSP + ᠤᠨ — a detached-suffix boundary typed twice, the case from
-//! Satsrag/meco-rust#40.
+//! Satsrag/mongol-convert#40.
 //!
 //! The hub keeps both separators, as the legacy targets do; UTN #57 allows one MVS between the
 //! stem's final letter and the suffix's first, so the encoder writes one and reports the repetition.
