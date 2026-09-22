@@ -1,6 +1,6 @@
 [package]
 name = "mongol-convert-uniffi"
-version = "0.7.0"
+version = "0.7.1"
 edition.workspace = true
 license.workspace = true
 description = "UniFFI binding for mongol-convert: idiomatic Swift (iOS) and Kotlin (Android) from one crate."

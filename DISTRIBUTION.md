@@ -9,14 +9,14 @@ and the per-language packages sit at the repo root, like `meco_php`/`meco_dart` 
 
 | Platform | Add to a project | Backed by |
 |---|---|---|
-| **Desktop / server CLI** | `cargo install mongol-convert --version 0.7.0 --locked` | `mongol-convert` binary + library |
+| **Desktop / server CLI** | `cargo install mongol-convert --version 0.7.1 --locked` | `mongol-convert` binary + library |
 | **PHP** (server) | `composer require zvvnmod/mongol-convert` | `mongol-convert-cabi` C ABI via FFI |
 | **Browser / web bundler** | Install `mongol-convert-wasm-web-*.tgz` from the GitHub Release | `mongol-convert-wasm` (wasm-bindgen web target) |
 | **Node.js** | Install `mongol-convert-wasm-nodejs-*.tgz` from the GitHub Release | `mongol-convert-wasm` (wasm-bindgen nodejs target) |
 | **Agent skill** | Extract `mongolian-convert-*.zip` into the agent's skills directory | Skill source + bundled `mongol-convert-wasm` |
 | **iOS** (SwiftPM) | Download `MongolConvertSwift.xcframework.zip` from the GitHub Release | `mongol-convert-uniffi` (Swift) |
 | **iOS** (CocoaPods) | `pod 'MongolConvert'` | `mongol-convert-uniffi` (Swift) |
-| **Android** (Gradle) | `implementation("com.zvvnmod:mongol-convert-android:0.7.0")` | `mongol-convert-uniffi` (Kotlin) |
+| **Android** (Gradle) | `implementation("com.zvvnmod:mongol-convert-android:0.7.1")` | `mongol-convert-uniffi` (Kotlin) |
 | **Go / Java / Python…** | load `libmongol_convert.{so,dylib}` (cgo / Panama-JNI / ctypes) | `mongol-convert-cabi` C ABI |
 
 Usage is the same everywhere: `translate(from, to, input)` with names
@@ -70,7 +70,7 @@ Release assets; those ecosystem registries remain separate follow-up steps.
 Rust consumers get the UTN #57 target through the normal core API with no feature flag:
 
 ```toml
-mongol-convert = "0.7.0"
+mongol-convert = "0.7.1"
 ```
 
 The pure-Rust `zvvnmod-utn57` backend is a regular dependency, so `cargo publish` and downstream

@@ -112,7 +112,7 @@ body:
       description: mongol-convert version, browser or CLI, whether the fonts loaded. / mongol-convert 版本、浏览器或 CLI、字体加载情况。
       render: text
       placeholder: |
-        core: 0.7.0 (wasm)
+        core: 0.7.1 (wasm)
         page: https://www.satsrag.dev/convert/
         fonts: delehi=loaded zvvn mod=loaded utn57=loaded
         ua: Mozilla/5.0 …

@@ -76,6 +76,10 @@ cargo test --workspace --locked
 
 发布流程见 [DISTRIBUTION.md](DISTRIBUTION.md)。
 
+## 相关项目
+
+- [mongol-norm](https://github.com/Satsrag/mongol-norm) —— 传统蒙古文 UTN #57 字形引擎与规范化工具，纯 Rust 实现。`mongol-convert` 用它生成 UTN #57 输出。
+
 ## 许可证
 
 Apache-2.0。本项目原名 `meco`，移植自 Java 版 [east-mod/meco](https://github.com/east-mod/meco)。
