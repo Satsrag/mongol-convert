@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'MongolConvert'
-  s.version      = '0.7.0'
+  s.version      = '0.7.1'
   s.summary      = 'Mongolian Encoding Converter — Rust core via UniFFI.'
   s.description  = 'Convert between Mongolian encodings (Zvvnmod, Z52, Menk-shape/letter, Delehi). '\
                    'Backed by the shared Rust mongol-convert core, verified byte-exact against the original Java.'

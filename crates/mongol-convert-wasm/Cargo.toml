@@ -1,6 +1,6 @@
 [package]
 name = "mongol-convert-wasm"
-version = "0.7.0"
+version = "0.7.1"
 edition.workspace = true
 license.workspace = true
 description = "WebAssembly binding for mongol-convert: an npm package for the browser, Node, Deno/Bun and edge runtimes."

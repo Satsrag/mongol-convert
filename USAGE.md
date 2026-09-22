@@ -33,7 +33,7 @@ The `mongol-convert` crate is both a Rust library and an installable command. In
 release from crates.io:
 
 ```sh
-cargo install mongol-convert --version 0.7.0 --locked
+cargo install mongol-convert --version 0.7.1 --locked
 ```
 
 Convert a command-line argument:

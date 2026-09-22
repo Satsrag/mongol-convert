@@ -76,6 +76,10 @@ cargo test --workspace --locked
 
 See [DISTRIBUTION.md](DISTRIBUTION.md) for the release process.
 
+## Related
+
+- [mongol-norm](https://github.com/Satsrag/mongol-norm) — UTN #57 shaping engine and canonical normalizer for traditional Mongolian, pure Rust. `mongol-convert` uses it for UTN #57 output.
+
 ## License
 
 Apache-2.0. Formerly `meco`; a Rust port of the Java [east-mod/meco](https://github.com/east-mod/meco).
