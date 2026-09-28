@@ -1,5 +1,9 @@
 # mongol-convert
 
+A Rust fork of [east-mod/meco](https://github.com/east-mod/meco) that adds UTN #57 support.
+
+本项目是 [east-mod/meco](https://github.com/east-mod/meco) 的 Rust 版 fork，新增了 UTN #57 支持。
+
 Convert traditional Mongolian text between encodings. Pure Rust, no I/O, builds for native and `wasm32`. MSRV 1.82.
 
 传统蒙古文编码转换。纯 Rust 实现，无 I/O，可编译到本地平台和 `wasm32`。最低 Rust 版本 1.82。
