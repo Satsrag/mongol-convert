@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+本项目是 [east-mod/meco](https://github.com/east-mod/meco) 的 Rust 版 fork，新增了 UTN #57（GB/T 25914-2023）支持。
+
 传统蒙古文编码转换工具，支持 Delehi、MenkLetter、UTN #57、MenkShape、Z52 和 ZVVNMOD 互转。核心用 Rust 编写，提供命令行、Rust 库，以及 C、Swift、Android、WebAssembly 包，全部在本地运行，不依赖外部程序。
 
 ## 在线试用

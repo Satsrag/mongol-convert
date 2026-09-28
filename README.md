@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+A Rust fork of [east-mod/meco](https://github.com/east-mod/meco) that adds UTN #57 (GB/T 25914-2023) support.
+
 Convert traditional Mongolian text between encodings: Delehi, MenkLetter, UTN #57, MenkShape, Z52, and ZVVNMOD. Written in Rust, available as a CLI, a Rust library, and C, Swift, Android, and WebAssembly packages. Everything runs locally with no external dependencies.
 
 ## Try it online
