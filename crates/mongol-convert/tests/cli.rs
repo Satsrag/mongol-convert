@@ -157,7 +157,7 @@ fn version_matches_the_mongol_convert_package() {
 
 #[test]
 fn reports_an_invented_zwj_on_stderr_and_still_succeeds() {
-    // A lone medial glyph, U+E09C, can only be spelled with a joiner the hub did not carry.
+    // A lone initial A, U+E000, can only be spelled with a trailing ZWJ the hub did not carry.
     let output = cli()
         .args([
             "translate",
@@ -165,7 +165,7 @@ fn reports_an_invented_zwj_on_stderr_and_still_succeeds() {
             "zvvnmod",
             "--to",
             "utn57",
-            "\u{E09C}",
+            "\u{E000}",
         ])
         .output()
         .expect("mongol-convert command should run");
@@ -175,13 +175,10 @@ fn reports_an_invented_zwj_on_stderr_and_still_succeeds() {
         "stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    assert_eq!(
-        output.stdout,
-        "\u{200D}\u{182D}\u{180C}\u{1825}\u{180C}".as_bytes()
-    );
+    assert_eq!(output.stdout, "\u{1820}\u{180B}\u{200D}".as_bytes());
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.starts_with("mongol-convert: warning: "), "{stderr}");
-    assert!(stderr.contains("U+E09C"), "{stderr}");
+    assert!(stderr.contains("U+E000"), "{stderr}");
     assert!(stderr.ends_with('\n'), "{stderr:?}");
 }
 

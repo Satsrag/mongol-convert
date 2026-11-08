@@ -2,7 +2,7 @@
 //!
 //! The encoding is `utn57` seen through mongol-norm's shape function. Writing renders each
 //! Mongolian word of a UTN #57 text into its written units and concatenates their PascalCase
-//! names, structural units included (`Mvs`, `Nirugu`, `Zwj`); reading parses each spelled word —
+//! names, structural units included (`Mvs`, `Nirugu`, `Zwj`, `Zwnj`); reading parses each spelled word —
 //! compact `SAIIA` or `+`-joined `S+A+I+I+A` — and asks mongol-norm for the canonical UTN #57
 //! spelling of that shape. Everything that is not a word passes through unchanged, as in every
 //! other encoding.
@@ -175,5 +175,21 @@ mod tests {
         );
         assert_eq!(split(""), Vec::<Piece<'_>>::new());
         assert_eq!(split("ᠠ"), vec![Piece::Other("ᠠ")]);
+    }
+
+    #[test]
+    fn a_zwnj_break_is_spelled_as_the_structural_unit() {
+        let text = "\u{182A}\u{200C}\u{182A}";
+        assert_eq!(encode(text).unwrap(), "BZwnjB");
+        assert_eq!(decode("BZwnjB").unwrap(), text);
+        assert_eq!(decode("B+Zwnj+B").unwrap(), text);
+        // Consecutive ZWNJs collapse to one structural unit.
+        assert_eq!(encode("\u{182A}\u{200C}\u{200C}\u{182A}").unwrap(), "BZwnjB");
+    }
+
+    #[test]
+    fn chi_expands_to_two_o_units() {
+        assert_eq!(encode("\u{1842}").unwrap(), "OO");
+        assert_eq!(decode("OO").unwrap(), "\u{1824}\u{180B}\u{1823}\u{180B}");
     }
 }
