@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.zvvnmod"
-version = "0.7.1"
+version = "0.8.0"
 
 android {
     namespace = "com.zvvnmod.mongolconvert"
