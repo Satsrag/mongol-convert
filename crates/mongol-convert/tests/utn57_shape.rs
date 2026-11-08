@@ -89,16 +89,49 @@ fn the_shape_encoding_is_its_own_identity_and_round_trips_through_the_hub() {
 
 #[test]
 fn output_carries_the_utn57_warnings_and_input_carries_none() {
-    // A lone medial glyph is spelled with an invented ZWJ, which the shape shows as `Zwj`.
+    // A lone initial A is spelled with an invented ZWJ, which the shape shows as `Zwj`.
     let padded =
-        translate_with_warnings(CodeType::Zvvnmod, CodeType::Utn57Shape, "\u{E09C}").unwrap();
+        translate_with_warnings(CodeType::Zvvnmod, CodeType::Utn57Shape, "\u{E000}").unwrap();
     assert_eq!(padded.warnings.len(), 1, "{:?}", padded.warnings);
-    assert_eq!(padded.text, "ZwjGO");
+    assert_eq!(padded.text, "AZwj");
     assert!(
         translate_with_warnings(CodeType::Utn57Shape, CodeType::Utn57, "SAIIA")
             .unwrap()
             .warnings
             .is_empty()
+    );
+}
+
+#[test]
+fn a_zwnj_break_is_a_structural_unit_in_the_compact_spelling() {
+    let utn57 = "\u{182A}\u{200C}\u{182A}";
+    assert_eq!(
+        translate(CodeType::Utn57, CodeType::Utn57Shape, utn57).unwrap(),
+        "BZwnjB"
+    );
+    for spelling in ["BZwnjB", "B+Zwnj+B"] {
+        assert_eq!(
+            translate(CodeType::Utn57Shape, CodeType::Utn57, spelling).unwrap(),
+            utn57
+        );
+    }
+    // Consecutive ZWNJs collapse to one structural unit (mongol-norm 0.4 control canonicalization).
+    assert_eq!(
+        translate(
+            CodeType::Utn57,
+            CodeType::Utn57Shape,
+            "\u{182A}\u{200C}\u{200C}\u{182A}"
+        )
+        .unwrap(),
+        "BZwnjB"
+    );
+}
+
+#[test]
+fn chi_expands_to_two_o_units() {
+    assert_eq!(
+        translate(CodeType::Utn57, CodeType::Utn57Shape, "\u{1842}").unwrap(),
+        "OO"
     );
 }
 

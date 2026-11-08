@@ -7,7 +7,7 @@
 //! ligature; the legacy tables never see it, since the ink is the one they already write for
 //! `E09C`.
 
-use mongol_convert::{translate, translate_with_warnings, CodeType, Warning};
+use mongol_convert::{translate, translate_with_warnings, CodeType};
 
 const HUB_G_O_ISOL: &str = "\u{E096}";
 const HUB_G_O_FINA: &str = "\u{E09C}";
@@ -103,19 +103,15 @@ fn the_initial_ligature_round_trips_through_utn57() {
 }
 
 #[test]
-fn a_hand_written_medial_glyph_alone_is_still_padded_and_now_reported() {
+fn a_hand_written_medial_glyph_alone_matches_the_initial_ligature() {
+    // Under mongol-norm 0.4 / mng-canonical/5 the joined and unjoined forms of E09C are
+    // equivalent, so a lone medial G+O is spelled the same as E096: no invented ZWJ.
     let padded = translate_with_warnings(CodeType::Zvvnmod, CodeType::Utn57, HUB_G_O_FINA).unwrap();
 
-    assert_eq!(padded.text, format!("\u{200D}{UTN57_G_O_ISOL}"));
-    assert_eq!(padded.warnings.len(), 1, "{:?}", padded.warnings);
-    match &padded.warnings[0] {
-        Warning::Utn57(reason) => assert!(reason.contains("U+E09C"), "{reason}"),
-        other => panic!("unexpected warning {other:?}"),
-    }
-    assert!(padded.warnings[0].to_string().contains("ZWJ"));
-    // The text-only entry point is the same conversion.
+    assert_eq!(padded.text, UTN57_G_O_ISOL);
+    assert!(padded.warnings.is_empty(), "{:?}", padded.warnings);
     assert_eq!(
-        translate(CodeType::Zvvnmod, CodeType::Utn57, HUB_G_O_FINA).unwrap(),
+        translate(CodeType::Zvvnmod, CodeType::Utn57, HUB_G_O_ISOL).unwrap(),
         padded.text
     );
 }
