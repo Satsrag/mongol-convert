@@ -24,6 +24,28 @@ fn the_hub_boundary_becomes_an_mvs() {
     );
 }
 
+#[test]
+fn standalone_chachlag_round_trips_through_utn57_and_shape() {
+    // Under zvvnmod-utn57 0.4.1 / mongol-norm 0.4.2, standalone AA_FINA (U+E00D, `Aa:isol`)
+    // synthesizes its chachlag MVS (`\u{180E}\u{1820}`) instead of collapsing to `A:isol`.
+    assert_eq!(
+        translate(CodeType::Zvvnmod, CodeType::Utn57, "\u{E00D}").unwrap(),
+        "\u{180E}\u{1820}"
+    );
+    assert_eq!(
+        translate(CodeType::Utn57, CodeType::Zvvnmod, "\u{180E}\u{1820}").unwrap(),
+        "\u{E00D}"
+    );
+    assert_eq!(
+        translate(CodeType::Zvvnmod, CodeType::Utn57Shape, "\u{E00D}").unwrap(),
+        "MvsAa"
+    );
+    assert_eq!(
+        translate(CodeType::Utn57Shape, CodeType::Zvvnmod, "MvsAa").unwrap(),
+        "\u{E00D}"
+    );
+}
+
 /// ᠲᠠᠯ᠎ᠠ᠎ᠶᠢᠨ — a chachlag A and then a detached suffix, the case from Satsrag/mongol-convert#22.
 ///
 /// Both separators are MVS in UTN #57 but mean different things: the first belongs to the chachlag
