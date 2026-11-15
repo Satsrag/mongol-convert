@@ -177,3 +177,27 @@ fn a_nirugu_is_shaped_inside_the_word_on_the_way_to_utn57() {
         "\u{1820}\u{180B}\u{1820}\u{180A}\u{1820}\u{180C}"
     );
 }
+
+#[test]
+fn non_joining_nirugu_boundaries_synthesize_zwnj_and_round_trip() {
+    let cases = [
+        (
+            "\u{E0E5}\u{E000}\u{E00C}",
+            "\u{180A}\u{200C}\u{1820}\u{180B}\u{1820}\u{180C}",
+        ),
+        (
+            "\u{E000}\u{E00C}\u{E0E5}",
+            "\u{1820}\u{180B}\u{1820}\u{180C}\u{200C}\u{180A}",
+        ),
+        ("\u{E00D}\u{E0E5}", "\u{1820}\u{180C}\u{200C}\u{180A}"),
+    ];
+    for (hub, expected_utn57) in cases {
+        let utn57 = translate(CodeType::Zvvnmod, CodeType::Utn57, hub).unwrap();
+        assert_eq!(utn57, expected_utn57, "hub={hub:?}");
+        assert_eq!(
+            translate(CodeType::Utn57, CodeType::Zvvnmod, &utn57).unwrap(),
+            hub,
+            "utn57={utn57:?}"
+        );
+    }
+}
